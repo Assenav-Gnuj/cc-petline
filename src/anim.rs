@@ -199,7 +199,13 @@ pub fn build_library(assets_root: Option<&Path>) -> Library {
             .filter(|d| d.is_dir())
             .and_then(|d| load_dir_frames(&d, ASSET_FRAME_MS, looping).ok())
             .filter(|a| !a.frames.is_empty())
-            .unwrap_or_else(|| Animation::new(sprite::frames_for(state), syn_ms, looping));
+            .unwrap_or_else(|| {
+                let frames = crate::theme::frames_for(state, &active_theme())
+                    .into_iter()
+                    .map(DynamicImage::ImageRgba8)
+                    .collect();
+                Animation::new(frames, syn_ms, looping)
+            });
         lib.insert(state, anim);
     }
     lib

@@ -11,3 +11,6 @@
 
 # Plugin's copied binary (rebuild via plugin/build.ps1)
 /plugin/bin/*.exe
+
+# scratch/verification files
+/.*.txt

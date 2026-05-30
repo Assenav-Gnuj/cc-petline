@@ -15,10 +15,14 @@ use image::RgbaImage;
 
 use crate::state::PetState;
 
-/// Synthetic frames for `state` under the named `theme`.
+/// Synthetic frames for `state` under the named `theme`. Normalized to `RgbaImage`
+/// (the cat's `sprite::frames_for` yields `DynamicImage`, so convert it).
 pub fn frames_for(state: PetState, theme: &str) -> Vec<RgbaImage> {
     match theme {
         "ghost" => crate::ghost::frames_for(state),
-        _ => crate::sprite::frames_for(state),
+        _ => crate::sprite::frames_for(state)
+            .into_iter()
+            .map(|d| d.into_rgba8())
+            .collect(),
     }
 }
