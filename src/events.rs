@@ -15,12 +15,45 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
 
-/// The shared state file both `emit` and `watch` use.
-pub fn state_file() -> PathBuf {
+/// The `~/.clawd-pet` config dir shared by the state and theme files.
+fn config_dir() -> PathBuf {
     let home = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".clawd-pet").join("state")
+    PathBuf::from(home).join(".clawd-pet")
+}
+
+/// The shared state file both `emit` and `watch` use.
+pub fn state_file() -> PathBuf {
+    config_dir().join("state")
+}
+
+/// The persisted-theme file written by `clawd-pet theme <name>` and read by
+/// `anim::active_theme()` as a fallback when `CLAWD_PET_THEME` is unset. This is
+/// what lets the `/clawd-theme` slash command stick across the separate processes
+/// Claude Code spawns for the statusline (an env var set in one wouldn't reach the
+/// next). Holds a single line: the lowercased theme name.
+pub fn theme_file() -> PathBuf {
+    config_dir().join("theme")
+}
+
+/// Read the persisted theme name (trimmed, lowercased), or None if unset/empty.
+pub fn read_persisted_theme() -> Option<String> {
+    let s = fs::read_to_string(theme_file()).ok()?;
+    let s = s.trim().to_lowercase();
+    if s.is_empty() { None } else { Some(s) }
+}
+
+/// Persist the theme name (called by `clawd-pet theme <name>`). Creates the dir if
+/// needed and stores the trimmed, lowercased name.
+pub fn write_persisted_theme(name: &str) -> Result<()> {
+    let path = theme_file();
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir).with_context(|| format!("creating {}", dir.display()))?;
+    }
+    fs::write(&path, format!("{}\n", name.trim().to_lowercase()))
+        .with_context(|| format!("writing {}", path.display()))?;
+    Ok(())
 }
 
 /// Map a hook event name (or a direct mood name) to a mood = PetState dir_name.
