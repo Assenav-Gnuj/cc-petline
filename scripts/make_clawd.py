@@ -28,15 +28,28 @@ ERR = (200, 70, 55, 255)     # error tint
 STATES = ["idle", "working", "active", "thinking", "happy", "surprised",
           "sleepy", "oops", "error", "angry", "scared"]
 
-# Eye treatment per mood (what actually survives at 10px):
-#   open   - two filled ovals (default)
-#   wide   - bigger ovals (surprise/scare/oops)
-#   happy  - upward arcs ^^
-#   closed - horizontal lines (sleepy)
-EYES = {
-    "idle": "open", "working": "open", "active": "wide", "thinking": "open",
-    "happy": "happy", "surprised": "wide", "sleepy": "closed", "oops": "wide",
-    "error": "open", "angry": "open", "scared": "wide",
+SCARE = (150, 140, 170, 255)  # pale desaturated body for scared
+
+# Per-mood expression. At 10px only a few things read, so every mood leans on a
+# COMBINATION of axes rather than eye-shape alone:
+#   eyes : open | wide | happy | closed | dizzy   (dizzy = X-ed out, error)
+#   dy   : vertical gaze offset in grid cells (-up / +down)
+#   mouth: none | o | smile | flat | frown
+#   brow : "" | "angry" (slanting V)
+#   body : BODY (default) | ERR (red) | SCARE (pale)
+EXPR = {
+    #          eyes      dy    mouth    brow      body
+    "idle":     ("open",  0.0, "none",  "",       BODY),
+    "working":  ("open",  0.7, "flat",  "",       BODY),   # eyes down, focused
+    "active":   ("open", -0.2, "smile", "",       BODY),   # bright, engaged
+    "thinking": ("open", -0.6, "none",  "",       BODY),   # eyes up, pondering
+    "happy":    ("happy", 0.0, "smile", "",       BODY),
+    "surprised":("wide",  0.0, "o",     "",       BODY),
+    "sleepy":   ("closed",0.3, "none",  "",       BODY),
+    "oops":     ("wide",  0.4, "flat",  "",       BODY),   # wide + look down
+    "error":    ("dizzy", 0.0, "flat",  "",       ERR),    # red + X eyes
+    "angry":    ("open",  0.1, "frown", "angry",  ERR),    # red + V brows
+    "scared":   ("wide",  0.0, "o",     "",        SCARE), # pale + wide + o
 }
 
 
@@ -47,7 +60,7 @@ def u(c):
 def draw(state):
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    body = ERR if state == "error" else BODY
+    eyes, dy, mouth, brow, body = EXPR[state]
 
     # ears — big triangles in the top corners (carry the silhouette at 10px)
     d.polygon([(u(0.6), 0), (u(3.3), 0), (u(2.0), u(2.6))], fill=body)
@@ -57,25 +70,42 @@ def draw(state):
     # cream face patch, chunky and centered
     d.rounded_rectangle([u(1.6), u(2.6), u(8.4), u(7.7)], radius=u(1.6), fill=FACE)
 
-    mode = EYES[state]
-    ex, ey = (3.5, 6.5), 4.6
-    if mode in ("open", "wide"):
-        rx, ry = (0.8, 1.0) if mode == "open" else (1.0, 1.15)
+    ex, ey = (3.5, 6.5), 4.6 + dy
+    lw = int(CELL * 0.9)
+    if eyes in ("open", "wide"):
+        # wide = bigger SOLID ovals (a highlight just turns to a checker at 10px)
+        rx, ry = (0.7, 0.9) if eyes == "open" else (0.95, 1.0)
         for cx in ex:
             d.ellipse([u(cx - rx), u(ey - ry), u(cx + rx), u(ey + ry)], fill=INK)
-    elif mode == "happy":
+    elif eyes == "happy":       # ^^ upward arcs
         for cx in ex:
             d.arc([u(cx - 1.0), u(ey - 0.6), u(cx + 1.0), u(ey + 1.2)],
-                  start=200, end=340, fill=INK, width=int(CELL * 0.9))
-    elif mode == "closed":
+                  start=200, end=340, fill=INK, width=lw)
+    elif eyes == "closed":      # — sleepy lines
         for cx in ex:
-            d.line([u(cx - 0.9), u(ey), u(cx + 0.9), u(ey)],
-                   fill=INK, width=int(CELL * 0.9))
+            d.line([u(cx - 0.9), u(ey), u(cx + 0.9), u(ey)], fill=INK, width=lw)
+    elif eyes == "dizzy":       # X-ed out (error)
+        for cx in ex:
+            d.line([u(cx - 0.7), u(ey - 0.7), u(cx + 0.7), u(ey + 0.7)], fill=INK, width=lw)
+            d.line([u(cx - 0.7), u(ey + 0.7), u(cx + 0.7), u(ey - 0.7)], fill=INK, width=lw)
 
-    # angry: heavy brows slanting inward (reads even at 10px as a V)
-    if state == "angry":
-        d.line([u(2.4), u(3.4), u(4.2), u(4.1)], fill=INK, width=int(CELL * 0.8))
-        d.line([u(7.6), u(3.4), u(5.8), u(4.1)], fill=INK, width=int(CELL * 0.8))
+    # mouth — one chunky feature below the eyes
+    mx, my = 5.0, ey + 1.9
+    if mouth == "o":
+        d.ellipse([u(mx - 0.6), u(my - 0.55), u(mx + 0.6), u(my + 0.65)], fill=INK)
+    elif mouth == "smile":
+        d.arc([u(mx - 1.1), u(my - 1.0), u(mx + 1.1), u(my + 0.7)],
+              start=20, end=160, fill=INK, width=lw)
+    elif mouth == "frown":
+        d.arc([u(mx - 1.1), u(my + 0.1), u(mx + 1.1), u(my + 1.8)],
+              start=200, end=340, fill=INK, width=lw)
+    elif mouth == "flat":
+        d.line([u(mx - 0.8), u(my), u(mx + 0.8), u(my)], fill=INK, width=lw)
+
+    # angry brows — heavy V slanting inward, above the eyes (reads at 10px)
+    if brow == "angry":
+        d.line([u(2.4), u(ey - 1.4), u(4.2), u(ey - 0.7)], fill=INK, width=int(CELL * 0.8))
+        d.line([u(7.6), u(ey - 1.4), u(5.8), u(ey - 0.7)], fill=INK, width=int(CELL * 0.8))
 
     return img
 
