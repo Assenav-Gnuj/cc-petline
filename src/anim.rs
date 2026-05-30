@@ -4,11 +4,11 @@
 // the current animation per tick. The `Library` maps each `PetState` to an
 // animation.
 //
-// ASSET SEAM: `build_library` prefers on-disk PNG frames (the ffmpeg → Monamoji
-// output from scripts/convert-gifs.ps1) and falls back to the synthetic `sprite`
-// generators when no assets are present. Drop frames into:
-//     assets/frames/<state>/*.png   (sorted lexically = playback order)
-// where <state> is PetState::dir_name(). No engine changes needed.
+// ASSET SEAM: `build_library` prefers on-disk PNG frames and falls back to the
+// synthetic character (see src/theme.rs) when no assets are present. Drop frames
+// into `<assets>/frames/<state>/*.png` (default mascot) or
+// `<assets>/themes/<name>/frames/<state>/*.png` (a CLAWD_PET_THEME pack), sorted
+// lexically = playback order, where <state> is PetState::dir_name().
 
 use std::collections::HashMap;
 use std::fs;
@@ -17,7 +17,6 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use image::DynamicImage;
 
-use crate::sprite;
 use crate::state::PetState;
 
 pub struct Animation {
@@ -92,7 +91,26 @@ impl Player {
     }
 }
 
-/// Resolve the assets root (the dir containing `frames/`), trying several
+// ---- Themes --------------------------------------------------------------------
+
+/// The active theme name, lowercased, from `CLAWD_PET_THEME` (default "morgana").
+/// A theme swaps the mascot: either an on-disk sprite pack under
+/// `<assets>/themes/<name>/frames/`, or a built-in synthetic character.
+pub fn active_theme() -> String {
+    std::env::var("CLAWD_PET_THEME")
+        .ok()
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "morgana".to_string())
+}
+
+/// True for theme names that use the DEFAULT on-disk art (the Morgana strips that
+/// live directly under `<assets>/frames/`), not a `themes/<name>` subdir.
+fn is_default_theme(theme: &str) -> bool {
+    matches!(theme, "morgana" | "default" | "clawd")
+}
+
+/// Resolve the BASE assets root (the dir containing `frames/`), trying several
 /// locations so it works whether launched from the crate (pane), from a project
 /// cwd (statusline command), or via an explicit override.
 pub fn resolve_assets_root() -> Option<std::path::PathBuf> {
@@ -124,25 +142,49 @@ pub fn resolve_assets_root() -> Option<std::path::PathBuf> {
     None
 }
 
+/// On-disk assets root for the ACTIVE theme, or `None` when there's no on-disk
+/// pack (so callers fall back to the synthetic character):
+///   - default theme (morgana/default/clawd) → the base assets dir.
+///   - any other theme → `<base>/themes/<name>` only when it actually has a
+///     `frames/` dir; otherwise `None`, so e.g. `ghost` with no art renders
+///     synthetically instead of wrongly showing the default Morgana frames.
+pub fn on_disk_assets_root() -> Option<std::path::PathBuf> {
+    let base = resolve_assets_root()?;
+    let theme = active_theme();
+    if is_default_theme(&theme) {
+        return Some(base);
+    }
+    let td = base.join("themes").join(&theme);
+    td.join("frames").is_dir().then_some(td)
+}
+
 /// Load the `index`-th on-disk frame for a state (wrapping by frame count), so the
 /// statusline can CYCLE frames across refreshes for a ~3fps animation instead of a
-/// fixed mid-frame. Falls back to a synthetic frame when no PNGs exist.
+/// fixed mid-frame. Honors the active theme; falls back to the theme's synthetic
+/// character when there's no on-disk pack.
 pub fn frame_at(state: PetState, index: usize) -> Option<DynamicImage> {
-    let root = resolve_assets_root()?;
-    let dir = root.join("frames").join(state.dir_name());
-    let mut paths: Vec<_> = fs::read_dir(&dir)
-        .ok()?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("png")))
-        .collect();
-    paths.sort();
-    if paths.is_empty() {
-        let frames = sprite::frames_for(state);
-        let n = frames.len();
-        return frames.into_iter().nth(if n == 0 { 0 } else { index % n });
+    if let Some(root) = on_disk_assets_root() {
+        let dir = root.join("frames").join(state.dir_name());
+        let mut paths: Vec<_> = fs::read_dir(&dir)
+            .ok()
+            .into_iter()
+            .flatten()
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("png")))
+            .collect();
+        paths.sort();
+        if !paths.is_empty() {
+            let i = index % paths.len();
+            return image::open(&paths[i]).ok();
+        }
     }
-    let i = index % paths.len();
-    image::open(&paths[i]).ok()
+    // No on-disk frames for this theme → synthetic character.
+    let frames = crate::theme::frames_for(state, &active_theme());
+    let n = frames.len();
+    frames
+        .into_iter()
+        .nth(if n == 0 { 0 } else { index % n })
+        .map(DynamicImage::ImageRgba8)
 }
 
 /// Load PNG frames from a directory, sorted by filename.
@@ -188,9 +230,10 @@ fn synthetic_timing(state: PetState) -> (u64, bool) {
 }
 
 /// Build the animation library. Uses on-disk frames when present under
-/// `assets/frames/<state>/` (played at ASSET_FRAME_MS), otherwise the synthetic
-/// generators at their hand-tuned per-state timing.
+/// `<assets_root>/frames/<state>/` (played at ASSET_FRAME_MS), otherwise the
+/// active theme's synthetic character at its hand-tuned per-state timing.
 pub fn build_library(assets_root: Option<&Path>) -> Library {
+    let theme = active_theme();
     let mut lib = Library::new();
     for state in PetState::ALL {
         let (syn_ms, looping) = synthetic_timing(state);
@@ -200,7 +243,7 @@ pub fn build_library(assets_root: Option<&Path>) -> Library {
             .and_then(|d| load_dir_frames(&d, ASSET_FRAME_MS, looping).ok())
             .filter(|a| !a.frames.is_empty())
             .unwrap_or_else(|| {
-                let frames = crate::theme::frames_for(state, &active_theme())
+                let frames = crate::theme::frames_for(state, &theme)
                     .into_iter()
                     .map(DynamicImage::ImageRgba8)
                     .collect();
