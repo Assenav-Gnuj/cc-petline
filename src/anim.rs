@@ -93,21 +93,87 @@ impl Player {
 
 // ---- Themes --------------------------------------------------------------------
 
-/// The active theme name, lowercased, from `CLAWD_PET_THEME` (default "morgana").
+/// The active theme name, lowercased. Resolution order:
+///   1. `CLAWD_PET_THEME` env var (lets a pane profile / shell export override);
+///   2. the persisted theme file (`~/.clawd-pet/theme`, written by `clawd-pet
+///      theme <name>` / the `/clawd-theme` command — survives across the separate
+///      processes Claude Code spawns for the statusline);
+///   3. default "morgana".
 /// A theme swaps the mascot: either an on-disk sprite pack under
 /// `<assets>/themes/<name>/frames/`, or a built-in synthetic character.
 pub fn active_theme() -> String {
-    std::env::var("CLAWD_PET_THEME")
+    if let Some(t) = std::env::var("CLAWD_PET_THEME")
         .ok()
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "morgana".to_string())
+    {
+        return t;
+    }
+    crate::events::read_persisted_theme().unwrap_or_else(|| "morgana".to_string())
 }
+
+/// Built-in themes that need no on-disk art. "morgana" is the shipped cat (which
+/// DOES have on-disk strips by default but also a synthetic fallback); "ghost" is
+/// the fully synthetic spectral character.
+pub const BUILTIN_THEMES: &[&str] = &["morgana", "ghost"];
 
 /// True for theme names that use the DEFAULT on-disk art (the Morgana strips that
 /// live directly under `<assets>/frames/`), not a `themes/<name>` subdir.
 fn is_default_theme(theme: &str) -> bool {
     matches!(theme, "morgana" | "default" | "clawd")
+}
+
+/// Where a given theme's frames come from. A pure classifier (no global state) so
+/// the `theme` command can describe what a name will render before/after setting it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ThemeArt {
+    /// The shipped Morgana cat strips under `<assets>/frames/`.
+    DefaultCatArt,
+    /// A real on-disk sprite pack at this `themes/<name>` dir.
+    OnDiskPack(std::path::PathBuf),
+    /// The built-in synthetic ghost (no art files).
+    SyntheticGhost,
+    /// Unknown name, no on-disk pack → falls back to the synthetic cat.
+    SyntheticCatFallback,
+}
+
+/// Classify where `name`'s art comes from, without touching env/file state.
+pub fn theme_art_source(name: &str) -> ThemeArt {
+    let name = name.trim().to_lowercase();
+    if is_default_theme(&name) {
+        return ThemeArt::DefaultCatArt;
+    }
+    if let Some(base) = resolve_assets_root() {
+        let td = base.join("themes").join(&name);
+        if td.join("frames").is_dir() {
+            return ThemeArt::OnDiskPack(td);
+        }
+    }
+    if name == "ghost" {
+        return ThemeArt::SyntheticGhost;
+    }
+    ThemeArt::SyntheticCatFallback
+}
+
+/// Discover on-disk theme packs: immediate subdirs of `<base>/themes/` that have a
+/// `frames/` dir. Lowercased, sorted, deduped. Empty when there's no assets root.
+pub fn on_disk_theme_packs() -> Vec<String> {
+    let Some(base) = resolve_assets_root() else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(base.join("themes")) {
+        for e in entries.flatten() {
+            if e.path().join("frames").is_dir() {
+                if let Some(name) = e.file_name().to_str() {
+                    out.push(name.to_lowercase());
+                }
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
 }
 
 /// Resolve the BASE assets root (the dir containing `frames/`), trying several
@@ -274,4 +340,35 @@ pub fn asset_summary(assets_root: &Path) -> (usize, usize) {
         }
     }
     (on_disk, PetState::ALL.len())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_theme_names_use_cat_art() {
+        // The default-art names are classified before any filesystem lookup, so
+        // these hold regardless of where the test runs.
+        for name in ["morgana", "default", "clawd", "MORGANA", "  Default  "] {
+            assert_eq!(theme_art_source(name), ThemeArt::DefaultCatArt, "name={name:?}");
+        }
+        assert!(is_default_theme("morgana"));
+        assert!(!is_default_theme("ghost"));
+    }
+
+    #[test]
+    fn ghost_is_synthetic_unless_a_pack_exists() {
+        // No `themes/ghost/frames` pack ships, so ghost classifies synthetic.
+        assert_eq!(theme_art_source("ghost"), ThemeArt::SyntheticGhost);
+        assert_eq!(theme_art_source("GHOST"), ThemeArt::SyntheticGhost);
+    }
+
+    #[test]
+    fn unknown_theme_falls_back_to_synthetic_cat() {
+        assert_eq!(
+            theme_art_source("no-such-theme-xyz"),
+            ThemeArt::SyntheticCatFallback
+        );
+    }
 }

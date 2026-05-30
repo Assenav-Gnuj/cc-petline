@@ -6,6 +6,8 @@
 //   clawd-pet emit <event> → fast, no TUI: maps a Claude Code hook event to a mood
 //                            and writes the state file the TUI watches. Called by
 //                            the plugin's hooks. (See src/events.rs.)
+//   clawd-pet theme [name] → get/set the active mascot theme (persisted to
+//                            ~/.clawd-pet/theme). Drives the /clawd-theme command.
 //
 // Phase 0 proved sixel does NOT work in Tabby. We render via our own transparent
 // halfblocks (render.rs); `r` cycles halfblocks → sextant → quadrant.
@@ -89,15 +91,101 @@ fn main() -> Result<()> {
         Some("guard") => events::run_guard(),
         // Statusline wrapper: render via ccstatusline + extract context%/cost for the pet.
         Some("statusline") => context::run_statusline(),
+        // Get/set the active mascot theme (drives the /clawd-theme command).
+        Some("theme") => run_theme(args.get(1).map(String::as_str)),
         // Long-running TUI (default, or explicit `watch`).
         Some("watch") | None => watch(),
         Some(other) => {
             eprintln!(
-                "clawd-pet: unknown command {other:?} (use: watch | emit <event> | statusline)"
+                "clawd-pet: unknown command {other:?} \
+                 (use: watch | emit <event> | statusline | theme [name])"
             );
             std::process::exit(2);
         }
     }
+}
+
+/// `clawd-pet theme [name]` — get or set the active mascot theme.
+///
+/// With no name, prints the current theme (and where it resolved from), the art
+/// source, and the available themes. With a name, persists it to
+/// `~/.clawd-pet/theme` (read by `anim::active_theme`) and reports what will
+/// render. This is the binary side of the `/clawd-theme` slash command.
+fn run_theme(name: Option<&str>) -> Result<()> {
+    // Describe what a theme name renders, in one human line.
+    let describe = |n: &str| -> String {
+        match anim::theme_art_source(n) {
+            anim::ThemeArt::DefaultCatArt => "Morgana cat (on-disk sprite strips)".to_string(),
+            anim::ThemeArt::OnDiskPack(p) => format!("custom sprite pack at {}", p.display()),
+            anim::ThemeArt::SyntheticGhost => "built-in synthetic ghost (no art files)".to_string(),
+            anim::ThemeArt::SyntheticCatFallback => {
+                "no art found — falls back to the synthetic cat".to_string()
+            }
+        }
+    };
+    // The list of selectable themes: built-ins + any on-disk packs (deduped).
+    let listing = || -> String {
+        let mut names: Vec<String> = anim::BUILTIN_THEMES.iter().map(|s| s.to_string()).collect();
+        for p in anim::on_disk_theme_packs() {
+            if !names.contains(&p) {
+                names.push(p);
+            }
+        }
+        names
+            .iter()
+            .map(|n| format!("  {n} — {}", describe(n)))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+
+    match name {
+        None => {
+            let active = anim::active_theme();
+            let env_set = std::env::var("CLAWD_PET_THEME")
+                .ok()
+                .map(|s| s.trim().to_lowercase())
+                .filter(|s| !s.is_empty());
+            let source = if env_set.as_deref() == Some(active.as_str()) {
+                "CLAWD_PET_THEME env var"
+            } else if events::read_persisted_theme().as_deref() == Some(active.as_str()) {
+                "~/.clawd-pet/theme"
+            } else {
+                "default"
+            };
+            println!("Active theme: {active}  (from {source})");
+            println!("  → {}", describe(&active));
+            println!("\nAvailable themes:\n{}", listing());
+            println!("\nSet with: clawd-pet theme <name>");
+        }
+        Some(n) => {
+            let n = n.trim().to_lowercase();
+            if n.is_empty() {
+                return run_theme(None);
+            }
+            events::write_persisted_theme(&n)?;
+            println!("Theme set to: {n}");
+            println!("  → {}", describe(&n));
+            if matches!(anim::theme_art_source(&n), anim::ThemeArt::SyntheticCatFallback) {
+                println!(
+                    "\nNote: \"{n}\" isn't a built-in and has no on-disk pack, so it renders as \
+                     the synthetic cat.\nBuilt-ins: {}. Add custom art with \
+                     `cargo run --example slice -- --theme {n} <strip-dir>`.",
+                    anim::BUILTIN_THEMES.join(", ")
+                );
+            }
+            // The persisted theme only applies when CLAWD_PET_THEME is unset (env wins).
+            if let Ok(env) = std::env::var("CLAWD_PET_THEME") {
+                if !env.trim().is_empty() && env.trim().to_lowercase() != n {
+                    println!(
+                        "\nWarning: CLAWD_PET_THEME={env:?} is set in this environment and \
+                         overrides the saved theme. Unset it for the saved theme to take effect."
+                    );
+                }
+            }
+            println!("\nThe pet picks this up on its next statusline refresh / pane tick.");
+        }
+    }
+    Ok(())
 }
 
 /// Build per-character rainbow-colored spans for the pane's speech bubble. Hue
