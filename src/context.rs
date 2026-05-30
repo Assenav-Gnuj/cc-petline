@@ -65,15 +65,30 @@ pub fn run_statusline() -> Result<()> {
 ///                      (= 10px tall, the native grid the sprites are authored on,
 ///                      so 120px frames downsample at a clean 12:1 with no row drop).
 ///   CLAWD_PET_GAP    — spaces between statusline text and the cat. Default 2.
-///   CLAWD_PET_WIDTH  — total target width to right-align the column within. If
-///                      set, the cat hugs this column (pad to WIDTH - catwidth)
-///                      instead of (statusline width + gap). Set it to your
-///                      terminal columns to pin the sidebar; 0/unset = auto.
+///   CLAWD_PET_WIDTH  — total width budget. Caps the whole block so it never
+///                      overflows the terminal (which would clip the fox/mood).
+///                      Unset = auto-detect (COLUMNS env, then a live terminal
+///                      query, then 120). Set it to your terminal columns to pin it.
+///   CLAWD_PET_BUBBLE — MAX inner width of the rotating-quote speech bubble
+///                      (clamp 12..100, default 28). The bubble auto-shrinks below
+///                      this to fit the width budget and is dropped only when even
+///                      a minimal (inner 12) bubble won't fit. 0 = off entirely.
 const DEFAULT_PET_ROWS: u16 = 5;
 const DEFAULT_PET_GAP: usize = 2;
 
 fn env_usize(key: &str) -> Option<usize> {
     std::env::var(key).ok().and_then(|v| v.trim().parse().ok())
+}
+
+/// Best-effort live terminal width (columns). Claude Code pipes our stdout, so a
+/// plain ioctl on stdout may not see the console; crossterm tries the available
+/// console handle. Returns None when it can't be determined (callers fall back to
+/// COLUMNS, then a safe default).
+fn detect_term_width() -> Option<usize> {
+    crossterm::terminal::size()
+        .ok()
+        .map(|(w, _)| w as usize)
+        .filter(|w| *w > 0)
 }
 
 /// Join the ccstatusline output (left) with a pet sprite column (right), aligned
@@ -124,42 +139,67 @@ fn compose_with_pet(status: &str) -> String {
         .max()
         .unwrap_or(0);
 
-    // Render the quote as a real rounded speech bubble placed to the RIGHT of the
-    // cat and vertically centered — the mascot "speaking" beside its image. The
-    // mood word goes on its own line BELOW the bubble. Inner text width via
-    // CLAWD_PET_BUBBLE (default 40, clamp 12..100); 0 disables the whole column.
-    let bubble_w = env_usize("CLAWD_PET_BUBBLE").unwrap_or(40);
-    let bubble: Vec<String> = if bubble_w == 0 {
-        Vec::new()
-    } else {
-        speech_bubble(&quote_line(seed), bubble_w.clamp(12, 100))
-    };
-    let bubble_h = bubble.len();
+    // Available width budget. The composed line must never exceed the terminal,
+    // or Claude Code truncates/wraps it — clipping the fox + mood word and even
+    // disturbing its own "auto-accept" indicator below. Resolve in order:
+    //   CLAWD_PET_WIDTH (explicit pin) → COLUMNS env → live terminal query → 120.
+    let avail_w = total_width
+        .or_else(|| env_usize("COLUMNS").filter(|w| *w > 0))
+        .or_else(detect_term_width)
+        .unwrap_or(120);
+    // Footprint of the always-present part: statusline text + gap + the fox.
+    let base_w = status_w + gap + cat_w;
+
+    // Right-of-fox column: a rainbow speech bubble (the quote) with the bold-mint
+    // mood word on its OWN line directly below the box. Width + height budgets (see
+    // avail_w / max_quote_lines) guarantee the whole column — box plus mood line —
+    // fits the terminal, so the mood never wraps to col 0 and the box never spills
+    // past the statusline's rows.
+    //
+    // The bubble AUTO-SHRINKS to the width budget. CLAWD_PET_BUBBLE sets the MAX
+    // inner text width (default 28, clamp 12..100); it shrinks below that as the
+    // terminal narrows. If even a minimal (inner 12) bubble won't fit, fall back to
+    // just the mood word inline beside the fox (when that fits). 0 = bubble off.
+    let bubble_max = env_usize("CLAWD_PET_BUBBLE").unwrap_or(28);
+    let mood_plain = format!("\u{bb} {}", mood_word(mood));
     // Rainbow phase flows the lolcat gradient over the bubble. Tie it to wall-clock
     // so it drifts each refresh (the bubble text itself only changes on mood change).
     let phase = ((now_ms / 80) % 360) as f32;
-    // Right-of-cat column, PRE-STYLED: rainbow-gradient bubble box, then a plain
-    // bold mood word line below it.
-    let mut right: Vec<String> = bubble
-        .iter()
-        .enumerate()
-        .map(|(r, l)| rainbow_line(l, r, phase))
-        .collect();
-    if bubble_h > 0 {
-        // bold mint mood word, matching the Charm palette
-        right.push(format!(
-            "\x1b[1;38;2;115;245;159m\u{bb} {}\x1b[0m",
-            mood_word(mood)
-        ));
-    }
+
+    // Room left of the budget for the bubble box, after the fox + a gap.
+    // Box width = inner + 4 (│ + space + text + space + │).
+    let room = avail_w.saturating_sub(base_w + gap);
+    let bubble_inner = room.saturating_sub(4).min(bubble_max.clamp(12, 100));
+    let mood_fits_inline = base_w + gap + mood_plain.chars().count() <= avail_w;
+
+    // Vertical budget: box + the mood line BELOW it must not make the statusline
+    // taller than it already is, or content spills past the row budget. Total
+    // height = 2 borders + quote lines + 1 mood line, so the quote may use at most
+    // (rows - 3) lines; it's truncated (ellipsized) to fit.
+    let max_quote_lines = rows.saturating_sub(3).max(1);
+
+    // `right` is fully ANSI-styled here; `bubble_h` is the BOX height (0 if no box),
+    // used to aim the tail at the box's middle. The mood word is appended as its
+    // own line BELOW the box, left-aligned to the box edge.
+    let (right, bubble_h): (Vec<String>, usize) = if bubble_max > 0 && bubble_inner >= 12 {
+        let mut box_rows = speech_bubble(&quote_line(seed), bubble_inner, max_quote_lines, phase);
+        let h = box_rows.len();
+        // bold mint mood word, on its own row beneath the bubble
+        box_rows.push(format!("\x1b[1;38;2;115;245;159m{}\x1b[0m", mood_plain));
+        (box_rows, h)
+    } else if mood_fits_inline {
+        // No room for a box → bold-mint mood word inline beside the fox.
+        (vec![format!("\x1b[1;38;2;115;245;159m{}\x1b[0m", mood_plain)], 0)
+    } else {
+        (Vec::new(), 0)
+    };
     let b_off = cat.len().saturating_sub(right.len()) / 2;
     let tail_row = b_off + bubble_h / 2; // tail sprouts from the bubble's middle
     // Grow the block if the right column is taller than both cat and statusline.
     let rows = rows.max(b_off + right.len());
 
-    // Cat sits just past the statusline text when a bubble is shown (so the
-    // bubble has room to its right); otherwise honour CLAWD_PET_WIDTH, never
-    // overlapping the text.
+    // Cat sits just past the statusline text when a right column is shown (so it
+    // has room beside it); otherwise honour CLAWD_PET_WIDTH, never overlapping.
     let cat_col = if !right.is_empty() {
         status_w + gap
     } else {
@@ -185,7 +225,7 @@ fn compose_with_pet(status: &str) -> String {
         // pointing back at the mascot on the bubble's middle row.
         if let Some(rel) = i.checked_sub(b_off) {
             if let Some(line) = right.get(rel) {
-                let tail = if i == tail_row && gap >= 1 {
+                let tail = if i == tail_row && gap >= 1 && bubble_h > 0 {
                     format!("{}\u{25c2}", " ".repeat(gap - 1)) // ◂ points left at the cat
                 } else {
                     " ".repeat(gap)
@@ -276,11 +316,38 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
 }
 
 
-/// Render `text` as a rounded speech-bubble box (a Vec of rows), wrapping the
-/// text to `inner_w` columns. Pure box-drawing chars; the caller adds the tail
-/// and dimming. Box is sized to the widest wrapped line, not the full inner_w.
-fn speech_bubble(text: &str, inner_w: usize) -> Vec<String> {
-    let lines = wrap_text(text, inner_w);
+/// Build a rounded speech bubble (fully ANSI-styled rows) holding `quote`, flowing
+/// a phase-driven lolcat rainbow over the text + borders. The quote is truncated
+/// (ellipsized) to at most `max_quote_lines` rows so the box — plus the mood line
+/// the caller appends below it — never grows taller than the statusline's row
+/// budget. Box content width = widest wrapped quote line, capped by `inner_w`.
+/// The quote is truncated to at most `max_quote_lines` rows (ellipsized) so the box
+/// (2 borders + quote + 1 mood) never grows taller than the statusline's row budget.
+fn speech_bubble(
+    quote: &str,
+    inner_w: usize,
+    max_quote_lines: usize,
+    phase: f32,
+) -> Vec<String> {
+    let mut lines = wrap_text(quote, inner_w);
+    // Clamp height: keep at most max_quote_lines, ending the last kept line with …
+    // if we dropped any, so a truncated quote still reads as deliberately cut.
+    let cap = max_quote_lines.max(1);
+    if lines.len() > cap {
+        lines.truncate(cap);
+        if let Some(last) = lines.last_mut() {
+            let mut chars: Vec<char> = last.chars().collect();
+            // Make room for the ellipsis within inner_w (drop trailing chars/space).
+            while chars.len() >= inner_w && !chars.is_empty() {
+                chars.pop();
+            }
+            if chars.last() == Some(&' ') {
+                chars.pop();
+            }
+            chars.push('\u{2026}'); // …
+            *last = chars.into_iter().collect();
+        }
+    }
     let w = lines
         .iter()
         .map(|l| l.chars().count())
@@ -289,12 +356,19 @@ fn speech_bubble(text: &str, inner_w: usize) -> Vec<String> {
         .max(1);
     let bar = "\u{2500}".repeat(w + 2); // ─, +2 for the inner single-space padding
     let mut out = Vec::with_capacity(lines.len() + 2);
-    out.push(format!("\u{256d}{bar}\u{256e}")); // ╭ ─ ╮
+    let mut row = 0usize;
+    out.push(rainbow_line(&format!("\u{256d}{bar}\u{256e}"), row, phase)); // ╭ ─ ╮
+    row += 1;
     for l in &lines {
         let padn = w - l.chars().count();
-        out.push(format!("\u{2502} {}{} \u{2502}", l, " ".repeat(padn))); // │ … │
+        out.push(rainbow_line(
+            &format!("\u{2502} {}{} \u{2502}", l, " ".repeat(padn)),
+            row,
+            phase,
+        )); // │ … │
+        row += 1;
     }
-    out.push(format!("\u{2570}{bar}\u{256f}")); // ╰ ─ ╯
+    out.push(rainbow_line(&format!("\u{2570}{bar}\u{256f}"), row, phase)); // ╰ ─ ╯
     out
 }
 
