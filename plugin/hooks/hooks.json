@@ -1,0 +1,68 @@
+{
+  "SessionStart": [
+    {
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit SessionStart" }
+      ]
+    }
+  ],
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit UserPromptSubmit" }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "*",
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit PreToolUse" },
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" guard" }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "*",
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit PostToolUse" }
+      ]
+    }
+  ],
+  "Notification": [
+    {
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit Notification" }
+      ]
+    }
+  ],
+  "SubagentStop": [
+    {
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit SubagentStop" }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit Stop" }
+      ]
+    }
+  ],
+  "PreCompact": [
+    {
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit PreCompact" }
+      ]
+    }
+  ],
+  "SessionEnd": [
+    {
+      "hooks": [
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit SessionEnd" }
+      ]
+    }
+  ]
+}

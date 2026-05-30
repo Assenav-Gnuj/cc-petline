@@ -1,0 +1,11 @@
+/target
+
+# Trademarked sprite assets (Octocat/Monamoji) — local only, never redistribute.
+# Keep the dir structure + README/recipe, ignore the actual media.
+/assets/source/*
+!/assets/source/.gitkeep
+!/assets/source/README.md
+/assets/frames/*/*.png
+
+# Plugin's copied binary (rebuild via plugin/build.ps1)
+/plugin/bin/*.exe
