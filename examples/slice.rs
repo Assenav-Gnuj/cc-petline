@@ -24,15 +24,32 @@ use anyhow::{bail, Context, Result};
 use image::GenericImageView;
 
 fn main() -> Result<()> {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+    // Optional `--theme <name>` flag; remaining args are positional (<src> <px>).
+    let mut theme: Option<String> = None;
+    let mut pos: Vec<String> = Vec::new();
+    let mut it = std::env::args().skip(1);
+    while let Some(a) = it.next() {
+        if a == "--theme" {
+            theme = it.next();
+        } else {
+            pos.push(a);
+        }
+    }
+
     let src = PathBuf::from(
-        args.first()
+        pos.first()
             .cloned()
             .unwrap_or_else(|| "C:/Users/Oreo/Downloads/mona".to_string()),
     );
-    let forced_size: Option<u32> = args.get(1).and_then(|s| s.parse().ok());
+    let forced_size: Option<u32> = pos.get(1).and_then(|s| s.parse().ok());
 
-    let out_root = PathBuf::from("assets/frames");
+    // Default → assets/frames (the Morgana character); --theme <name> → a theme
+    // pack at assets/themes/<name>/frames that CLAWD_PET_THEME=<name> picks up.
+    let out_root = match &theme {
+        Some(t) => PathBuf::from("assets/themes").join(t).join("frames"),
+        None => PathBuf::from("assets/frames"),
+    };
+    eprintln!("slicing into {}", out_root.display());
 
     if !src.is_dir() {
         bail!("source dir not found: {}", src.display());
