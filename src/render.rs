@@ -153,7 +153,10 @@ pub fn render(
 
     let gw = cols as u32 * sub_w;
     let gh = rows as u32 * sub_h;
-    let small = img.resize_exact(gw, gh, FilterType::Lanczos3).to_rgba8();
+    // Nearest, not Lanczos: the sprites are pixel art authored on a small grid and
+    // supersampled. A smoothing filter averages across design cells and turns hard
+    // edges into mud at statusline sizes; nearest preserves the crisp blocks.
+    let small = img.resize_exact(gw, gh, FilterType::Nearest).to_rgba8();
 
     let mut lines = Vec::with_capacity(rows as usize);
     for cy in 0..rows as u32 {
@@ -225,8 +228,9 @@ fn rgb(px: &image::Rgba<u8>) -> Color {
 pub fn render_ansi(img: &DynamicImage, rows: u16) -> Vec<String> {
     let rows = rows.max(1) as u32;
     let cols = rows * 2; // square sprite at 1:2 cell ratio
+    // Nearest keeps pixel-art blocks crisp at tiny sizes (see render() above).
     let small = img
-        .resize_exact(cols, rows * 2, FilterType::Lanczos3)
+        .resize_exact(cols, rows * 2, FilterType::Nearest)
         .to_rgba8();
 
     let mut out = Vec::with_capacity(rows as usize);

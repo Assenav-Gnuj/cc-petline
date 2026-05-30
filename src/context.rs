@@ -61,13 +61,15 @@ pub fn run_statusline() -> Result<()> {
 }
 
 /// Pet column defaults (overridable via env so it can't wrap a narrow terminal):
-///   CLAWD_PET_ROWS   — cat height in terminal rows (width = rows*2). Default 6.
+///   CLAWD_PET_ROWS   — cat height in terminal rows (width = rows*2). Default 5
+///                      (= 10px tall, the native grid the sprites are authored on,
+///                      so 120px frames downsample at a clean 12:1 with no row drop).
 ///   CLAWD_PET_GAP    — spaces between statusline text and the cat. Default 2.
 ///   CLAWD_PET_WIDTH  — total target width to right-align the column within. If
 ///                      set, the cat hugs this column (pad to WIDTH - catwidth)
 ///                      instead of (statusline width + gap). Set it to your
 ///                      terminal columns to pin the sidebar; 0/unset = auto.
-const DEFAULT_PET_ROWS: u16 = 6;
+const DEFAULT_PET_ROWS: u16 = 5;
 const DEFAULT_PET_GAP: usize = 2;
 
 fn env_usize(key: &str) -> Option<usize> {
