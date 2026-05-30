@@ -25,10 +25,12 @@
 mod anim;
 mod context;
 mod events;
+mod ghost;
 mod quips;
 mod render;
 mod sprite;
 mod state;
+mod theme;
 
 use std::io::{IsTerminal, Read as _};
 use std::path::PathBuf;
@@ -136,9 +138,15 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
 }
 
 fn watch() -> Result<()> {
-    let assets_root = PathBuf::from("assets");
-    let lib = anim::build_library(Some(&assets_root));
-    let (on_disk, total) = anim::asset_summary(&assets_root);
+    // Honor the active theme (CLAWD_PET_THEME): a non-default theme with an on-disk
+    // pack under assets/themes/<name>/frames resolves here; a themeless/art-less
+    // theme yields None → build_library uses the synthetic character for all states.
+    let assets_root = anim::on_disk_assets_root();
+    let lib = anim::build_library(assets_root.as_deref());
+    let (on_disk, total) = match &assets_root {
+        Some(r) => anim::asset_summary(r),
+        None => (0, PetState::ALL.len()),
+    };
 
     let mut terminal = ratatui::init();
     let result = run(&mut terminal, &lib, on_disk, total);

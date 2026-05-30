@@ -40,6 +40,32 @@ There's also an **opt-in** token-saver `guard` hook (PreToolUse): off by default
 `CLAWD_PET_GUARD=1` to block a small denylist of catastrophic/wasteful Bash commands via
 exit-2 (so Claude self-corrects).
 
+## Themes (mascots)
+
+The mascot is themeable via `CLAWD_PET_THEME`:
+
+| Theme | What you get |
+|-------|--------------|
+| `morgana` *(default)* | the Morgana cat (your sliced sprite pack under `assets/frames/`) |
+| `ghost` | a built-in **synthetic** spectral ghost — needs no art files |
+| *custom* | your own sprite pack under `assets/themes/<name>/frames/` |
+
+```sh
+CLAWD_PET_THEME=ghost   # instant, no art needed (synthetic character)
+```
+
+Add your **own** mascot by slicing horizontal strips into a theme pack, then
+selecting it:
+
+```sh
+cargo run --example slice -- --theme robot C:/path/to/robot/strips
+CLAWD_PET_THEME=robot
+```
+
+A theme with no on-disk pack and no built-in character falls back to the default
+cat, so it never breaks. Built-in synthetic characters live in `src/` (the cat in
+`sprite.rs`, the ghost in `ghost.rs`); the selector is `src/theme.rs`.
+
 ## Build
 
 ```sh
@@ -59,6 +85,7 @@ The plugin bundles a prebuilt binary via `plugin/build.ps1`.
 | `CLAWD_PET_BUBBLE` | 40 | speech-bubble inner text width (0 = no bubble) |
 | `CLAWD_PET_FPS_MS` | 120 | statusline frame period (sampled per refresh) |
 | `CLAWD_PET_ASSETS` | auto | path to the `assets/` dir if not auto-resolved |
+| `CLAWD_PET_THEME` | morgana | mascot theme: `morgana`, `ghost`, or a custom pack name |
 | `CLAWD_PET_GUARD` | unset | `1` enables the PreToolUse command guard |
 
 ## Notes

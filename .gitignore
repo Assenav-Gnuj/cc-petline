@@ -6,6 +6,8 @@
 !/assets/source/.gitkeep
 !/assets/source/README.md
 /assets/frames/*/*.png
+# Custom theme sprite packs (sliced art) — keep structure, ignore the media.
+/assets/themes/*/frames/*/*.png
 
 # Plugin's copied binary (rebuild via plugin/build.ps1)
 /plugin/bin/*.exe
