@@ -1,10 +1,6 @@
 /target
 
-# Trademarked sprite assets (Octocat/Monamoji) — local only, never redistribute.
-# Keep the dir structure + README/recipe, ignore the actual media.
-/assets/source/*
-!/assets/source/.gitkeep
-!/assets/source/README.md
+# Sprite frame media — local only, gitignored (regenerate via examples/slice.rs).
 /assets/frames/*/*.png
 # Custom theme sprite packs (sliced art) — keep structure, ignore the media.
 /assets/themes/*/frames/*/*.png

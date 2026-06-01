@@ -1,8 +1,8 @@
 // Procedural sprite generation for clawd-pet.
 //
-// These synthetic frames are the BUILT-IN FALLBACK: real Monamoji PNG frames load
+// These synthetic frames are the BUILT-IN FALLBACK: real PNG frames load
 // from assets/frames/<state>/ when present (see anim::build_library). Since those
-// frames are gitignored (trademark), a fresh checkout runs entirely on these.
+// frames are gitignored, a fresh checkout runs entirely on these.
 //
 // Each PetState has a generator returning a Vec<DynamicImage>. They share one
 // parameterized `draw(Pose)` so adding a mood = a new pose recipe, not new pixel

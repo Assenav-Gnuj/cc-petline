@@ -1,6 +1,6 @@
 // clawd-pet — halfblocks animation test.
-// Cycles 3 hand-built frames (bounce + blink) to judge whether halfblock Monamoji
-// playback looks good enough before committing Phase 1 to it.
+// Cycles 3 hand-built frames (bounce + blink) to sanity-check that halfblock
+// sprite playback looks good.
 //
 // Builds as an example (target/debug/examples/anim.exe) so it doesn't fight the
 // main pet binary for the file lock.
