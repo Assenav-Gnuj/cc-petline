@@ -45,7 +45,7 @@ fn context_file() -> PathBuf {
 ///
 /// The pet here is a STATIC mood frame (the statusline only redraws per message /
 /// refresh, so it can't animate). The mood is read from the same `~/.clawd-pet/state`
-/// file the hooks write via `emit`, so the cat reflects what Claude is doing.
+/// file the hooks write via `emit`, so the pet reflects what Claude is doing.
 pub fn run_statusline() -> Result<()> {
     let mut payload = String::new();
     let _ = std::io::stdin().read_to_string(&mut payload);
@@ -61,10 +61,10 @@ pub fn run_statusline() -> Result<()> {
 }
 
 /// Pet column defaults (overridable via env so it can't wrap a narrow terminal):
-///   CLAWD_PET_ROWS   — cat height in terminal rows (width = rows*2). Default 5
+///   CLAWD_PET_ROWS   — pet height in terminal rows (width = rows*2). Default 5
 ///                      (= 10px tall, the native grid the sprites are authored on,
 ///                      so 120px frames downsample at a clean 12:1 with no row drop).
-///   CLAWD_PET_GAP    — spaces between statusline text and the cat. Default 2.
+///   CLAWD_PET_GAP    — spaces between statusline text and the pet. Default 2.
 ///   CLAWD_PET_WIDTH  — total width budget. Caps the whole block so it never
 ///                      overflows the terminal (which would clip the fox/mood).
 ///                      Unset = auto-detect (COLUMNS env, then a live terminal
@@ -92,7 +92,7 @@ fn detect_term_width() -> Option<usize> {
 }
 
 /// Join the ccstatusline output (left) with a pet sprite column (right), aligned
-/// so the cat forms a clean right column like a sidebar. Sizing is env-driven so
+/// so the pet forms a clean right column like a sidebar. Sizing is env-driven so
 /// it never wraps: set CLAWD_PET_WIDTH to your terminal columns to pin it.
 fn compose_with_pet(status: &str) -> String {
     let rows_cfg = env_usize("CLAWD_PET_ROWS").unwrap_or(DEFAULT_PET_ROWS as usize) as u16;
@@ -125,14 +125,14 @@ fn compose_with_pet(status: &str) -> String {
         .map(|d| d.as_millis())
         .unwrap_or(0);
     let frame_idx = (now_ms / frame_ms) as usize;
-    let cat = match crate::anim::frame_at(mood, frame_idx) {
+    let pet = match crate::anim::frame_at(mood, frame_idx) {
         Some(img) => crate::render::render_ansi(&img, pet_rows),
         None => return status.to_string(), // no assets → just the statusline
     };
-    let cat_w = cat.iter().map(|l| crate::render::visible_width(l)).max().unwrap_or(0);
+    let pet_w = pet.iter().map(|l| crate::render::visible_width(l)).max().unwrap_or(0);
 
     let status_lines: Vec<&str> = status.trim_end_matches('\n').split('\n').collect();
-    let rows = status_lines.len().max(cat.len());
+    let rows = status_lines.len().max(pet.len());
     let status_w = status_lines
         .iter()
         .map(|l| crate::render::visible_width(l))
@@ -148,7 +148,7 @@ fn compose_with_pet(status: &str) -> String {
         .or_else(detect_term_width)
         .unwrap_or(120);
     // Footprint of the always-present part: statusline text + gap + the fox.
-    let base_w = status_w + gap + cat_w;
+    let base_w = status_w + gap + pet_w;
 
     // Right-of-fox column: a rainbow speech bubble (the quote) with the bold-mint
     // mood word on its OWN line directly below the box. Width + height budgets (see
@@ -193,18 +193,18 @@ fn compose_with_pet(status: &str) -> String {
     } else {
         (Vec::new(), 0)
     };
-    let b_off = cat.len().saturating_sub(right.len()) / 2;
+    let b_off = pet.len().saturating_sub(right.len()) / 2;
     let tail_row = b_off + bubble_h / 2; // tail sprouts from the bubble's middle
-    // Grow the block if the right column is taller than both cat and statusline.
+    // Grow the block if the right column is taller than both pet and statusline.
     let rows = rows.max(b_off + right.len());
 
-    // Cat sits just past the statusline text when a right column is shown (so it
+    // Pet sits just past the statusline text when a right column is shown (so it
     // has room beside it); otherwise honour CLAWD_PET_WIDTH, never overlapping.
-    let cat_col = if !right.is_empty() {
+    let pet_col = if !right.is_empty() {
         status_w + gap
     } else {
         match total_width {
-            Some(w) => w.saturating_sub(cat_w).max(status_w + 1),
+            Some(w) => w.saturating_sub(pet_w).max(status_w + 1),
             None => status_w + gap,
         }
     };
@@ -212,21 +212,21 @@ fn compose_with_pet(status: &str) -> String {
     let mut out = String::new();
     for i in 0..rows {
         let left = status_lines.get(i).copied().unwrap_or("");
-        let pad = cat_col.saturating_sub(crate::render::visible_width(left));
+        let pad = pet_col.saturating_sub(crate::render::visible_width(left));
         out.push_str(left);
         out.push_str(&" ".repeat(pad));
-        // Cat slice (may be blank on rows past the cat's height).
-        if let Some(cat_line) = cat.get(i) {
-            out.push_str(cat_line);
+        // Pet slice (may be blank on rows past the pet's height).
+        if let Some(pet_line) = pet.get(i) {
+            out.push_str(pet_line);
         } else {
-            out.push_str(&" ".repeat(cat_w));
+            out.push_str(&" ".repeat(pet_w));
         }
-        // Right column (bubble box + mood line) beside the cat, with a tail
+        // Right column (bubble box + mood line) beside the pet, with a tail
         // pointing back at the mascot on the bubble's middle row.
         if let Some(rel) = i.checked_sub(b_off) {
             if let Some(line) = right.get(rel) {
                 let tail = if i == tail_row && gap >= 1 && bubble_h > 0 {
-                    format!("{}\u{25c2}", " ".repeat(gap - 1)) // ◂ points left at the cat
+                    format!("{}\u{25c2}", " ".repeat(gap - 1)) // ◂ points left at the pet
                 } else {
                     " ".repeat(gap)
                 };

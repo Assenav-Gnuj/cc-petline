@@ -1,9 +1,8 @@
 // Pet state machine for clawd-pet.
 //
-// 11 moods — one per user-made sprite strip in C:\Users\Oreo\Downloads\mona
-// (authored with the Sprites-project tool at C:\Users\Oreo\Claude\Projects\
-// Sprites-project). examples/slice.rs cuts each mona_<state>_strip.png into
-// assets/frames/<state>/. Phase 3 will map Claude Code hook events onto these.
+// 11 moods — one per mascot animation. Each maps to a frame dir the engine loads
+// from assets/frames/<state>/ (the shipped Fox pack), with a synthetic fallback.
+// Claude Code hook events map onto these moods (see src/events.rs).
 
 /// What the pet is currently feeling/doing. Each maps to one sprite strip / animation.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -36,8 +35,8 @@ impl PetState {
         PetState::Scared,
     ];
 
-    /// Asset subdirectory name (assets/frames/<dir_name>/) — matches the strip's
-    /// `mona_<name>_strip.png` state token.
+    /// Asset subdirectory name (assets/frames/<dir_name>/) — also the per-state
+    /// frame-pack folder name in a theme.
     pub fn dir_name(self) -> &'static str {
         match self {
             PetState::Idle => "idle",

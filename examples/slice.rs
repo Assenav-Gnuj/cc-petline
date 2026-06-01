@@ -1,18 +1,19 @@
 // slice.rs — cut horizontal sprite strips into per-frame PNGs.
 //
-// User-made art lives as `<dir>/mona_<state>_strip.png`, each a 360px-tall row of
-// square 360x360 frames. This slices every strip into frames the engine loads:
+// Source art lives as `<dir>/<state>_strip.png`, each a row of square frames laid
+// left→right. This slices every strip into frames the engine loads:
 //     assets/frames/<state>/0001.png, 0002.png, ...
 //
 // Built as an example so it doesn't fight the main pet binary's .exe lock, and so
 // it reuses the `image` crate already in deps (no external tool, cross-platform).
 //
 // Usage (run from crate root):
-//   cargo run --example slice                       # default src = C:/Users/Oreo/Downloads/mona
-//   cargo run --example slice -- <src_dir>          # custom source dir
-//   cargo run --example slice -- <src_dir> <px>     # override frame size (default = strip height)
+//   cargo run --example slice                                # default src = assets/strips
+//   cargo run --example slice -- <src_dir>                   # custom source dir
+//   cargo run --example slice -- <src_dir> <px>              # override frame size (default = strip height)
+//   cargo run --example slice -- --theme <name> <src_dir>    # slice into a theme pack
 //
-// State name = the part between `mona_` and `_strip` in the filename. The engine's
+// State name = the part before `_strip` in the filename. The engine's
 // PetState::dir_name() values are what actually get loaded; unmapped names are
 // still sliced (so you can stage extras) but the engine ignores dirs it has no
 // state for.
@@ -39,11 +40,11 @@ fn main() -> Result<()> {
     let src = PathBuf::from(
         pos.first()
             .cloned()
-            .unwrap_or_else(|| "C:/Users/Oreo/Downloads/mona".to_string()),
+            .unwrap_or_else(|| "assets/strips".to_string()),
     );
     let forced_size: Option<u32> = pos.get(1).and_then(|s| s.parse().ok());
 
-    // Default → assets/frames (the Morgana character); --theme <name> → a theme
+    // Default → assets/frames (the shipped Fox default art); --theme <name> → a
     // pack at assets/themes/<name>/frames that CLAWD_PET_THEME=<name> picks up.
     let out_root = match &theme {
         Some(t) => PathBuf::from("assets/themes").join(t).join("frames"),
@@ -60,13 +61,13 @@ fn main() -> Result<()> {
         .filter(|p| {
             p.file_name()
                 .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with("mona_") && n.ends_with("_strip.png"))
+                .is_some_and(|n| n.ends_with("_strip.png"))
         })
         .collect();
     strips.sort();
 
     if strips.is_empty() {
-        bail!("no mona_*_strip.png files in {}", src.display());
+        bail!("no *_strip.png files in {}", src.display());
     }
 
     let mut total_states = 0;
@@ -74,10 +75,9 @@ fn main() -> Result<()> {
 
     for strip in &strips {
         let stem = strip.file_name().unwrap().to_str().unwrap();
-        // mona_<state>_strip.png  ->  <state>
+        // <state>_strip.png  ->  <state>
         let state = stem
-            .strip_prefix("mona_")
-            .and_then(|s| s.strip_suffix("_strip.png"))
+            .strip_suffix("_strip.png")
             .context("unexpected filename")?
             .to_string();
 

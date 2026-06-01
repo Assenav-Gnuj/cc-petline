@@ -8,7 +8,7 @@
       "name": "clawd-pet",
       "source": "./",
       "version": "0.1.0",
-      "description": "Animated Morgana-cat companion that reacts to Claude Code activity in a Tabby pane, plus a Charm statusline wrapper feeding it live context%/cost."
+      "description": "Animated Fox companion that reacts to Claude Code activity in a Tabby pane, plus a Charm statusline wrapper feeding it live context%/cost."
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "name": "clawd-pet",
   "version": "0.1.0",
-  "description": "Animated sprite companion (Morgana cat) that reacts to Claude Code activity in a Tabby pane. Hooks push moods to the pet; run `clawd-pet watch` in a pane to see it.",
+  "description": "Animated Fox companion that reacts to Claude Code activity in a Tabby pane. Hooks push moods to the pet; run `clawd-pet watch` in a pane to see it.",
   "author": {
     "name": "Oreo"
   },

@@ -290,7 +290,7 @@ fn scared() -> Vec<DynamicImage> {
 }
 
 /// The synthetic fallback frames for any state. (Used only when a state has no
-/// on-disk sprite frames; the user's mona strips normally cover all 11.)
+/// on-disk sprite frames; the shipped Fox pack normally covers all 11.)
 pub fn frames_for(state: PetState) -> Vec<DynamicImage> {
     match state {
         PetState::Idle => idle(),

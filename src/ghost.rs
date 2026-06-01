@@ -3,8 +3,8 @@
 // canvas + draw helpers so it never depends on sprite.rs internals.
 //
 // A spectral pale body: rounded dome on top, straight sides, a wavy/scalloped
-// fringe at the bottom, and two dark eyes that vary by mood — mirroring the cat's
-// expression set so all 11 moods read clearly at tiny sizes.
+// fringe at the bottom, and two dark eyes that vary by mood — mirroring the default
+// mascot's expression set so all 11 moods read clearly at tiny sizes.
 
 use image::{Rgba, RgbaImage};
 
@@ -17,7 +17,7 @@ const BODY: [u8; 4] = [0xCF, 0xD8, 0xF7, 0xFF]; // pale spectral blue-white
 const EYE: [u8; 4] = [0x22, 0x22, 0x33, 0xFF];
 const PINK: [u8; 4] = [0xFF, 0x5F, 0x87, 0xFF];
 
-/// Two frames per mood (a 1px bob/expression change), matching the cat set.
+/// Two frames per mood (a 1px bob/expression change), matching the mascot set.
 pub fn frames_for(state: PetState) -> Vec<RgbaImage> {
     use PetState::*;
     match state {
@@ -67,7 +67,7 @@ fn draw(eyes: Eyes, bob: i32) -> RgbaImage {
         }
     }
 
-    // Eyes — same vocabulary as the cat, scaled to the ghost face.
+    // Eyes — same vocabulary as the default mascot, scaled to the ghost face.
     let eye_y = dome_cy - 1;
     let lx = cx - 4;
     let rx = cx + 4;

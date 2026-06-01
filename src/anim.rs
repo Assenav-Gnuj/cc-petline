@@ -98,7 +98,7 @@ impl Player {
 ///   2. the persisted theme file (`~/.clawd-pet/theme`, written by `clawd-pet
 ///      theme <name>` / the `/clawd-theme` command — survives across the separate
 ///      processes Claude Code spawns for the statusline);
-///   3. default "morgana".
+///   3. default "fox".
 /// A theme swaps the mascot: either an on-disk sprite pack under
 /// `<assets>/themes/<name>/frames/`, or a built-in synthetic character.
 pub fn active_theme() -> String {
@@ -109,39 +109,39 @@ pub fn active_theme() -> String {
     {
         return t;
     }
-    crate::events::read_persisted_theme().unwrap_or_else(|| "morgana".to_string())
+    crate::events::read_persisted_theme().unwrap_or_else(|| "fox".to_string())
 }
 
-/// Built-in themes that need no on-disk art. "morgana" is the shipped cat (which
-/// DOES have on-disk strips by default but also a synthetic fallback); "ghost" is
-/// the fully synthetic spectral character.
-pub const BUILTIN_THEMES: &[&str] = &["morgana", "ghost"];
+/// Selectable built-in themes. "fox" is the shipped default (on-disk frames under
+/// `<assets>/frames/`, with a synthetic fallback if the art is missing); "ghost"
+/// is the fully synthetic spectral character.
+pub const BUILTIN_THEMES: &[&str] = &["fox", "ghost"];
 
-/// True for theme names that use the DEFAULT on-disk art (the Morgana strips that
+/// True for theme names that use the DEFAULT on-disk art (the Fox frames that
 /// live directly under `<assets>/frames/`), not a `themes/<name>` subdir.
 fn is_default_theme(theme: &str) -> bool {
-    matches!(theme, "morgana" | "default" | "clawd")
+    matches!(theme, "fox" | "default")
 }
 
 /// Where a given theme's frames come from. A pure classifier (no global state) so
 /// the `theme` command can describe what a name will render before/after setting it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ThemeArt {
-    /// The shipped Morgana cat strips under `<assets>/frames/`.
-    DefaultCatArt,
+    /// The shipped Fox frames under `<assets>/frames/`.
+    DefaultArt,
     /// A real on-disk sprite pack at this `themes/<name>` dir.
     OnDiskPack(std::path::PathBuf),
     /// The built-in synthetic ghost (no art files).
     SyntheticGhost,
-    /// Unknown name, no on-disk pack → falls back to the synthetic cat.
-    SyntheticCatFallback,
+    /// Unknown name, no on-disk pack → falls back to the synthetic character.
+    SyntheticFallback,
 }
 
 /// Classify where `name`'s art comes from, without touching env/file state.
 pub fn theme_art_source(name: &str) -> ThemeArt {
     let name = name.trim().to_lowercase();
     if is_default_theme(&name) {
-        return ThemeArt::DefaultCatArt;
+        return ThemeArt::DefaultArt;
     }
     if let Some(base) = resolve_assets_root() {
         let td = base.join("themes").join(&name);
@@ -152,7 +152,7 @@ pub fn theme_art_source(name: &str) -> ThemeArt {
     if name == "ghost" {
         return ThemeArt::SyntheticGhost;
     }
-    ThemeArt::SyntheticCatFallback
+    ThemeArt::SyntheticFallback
 }
 
 /// Discover on-disk theme packs: immediate subdirs of `<base>/themes/` that have a
@@ -210,10 +210,10 @@ pub fn resolve_assets_root() -> Option<std::path::PathBuf> {
 
 /// On-disk assets root for the ACTIVE theme, or `None` when there's no on-disk
 /// pack (so callers fall back to the synthetic character):
-///   - default theme (morgana/default/clawd) → the base assets dir.
+///   - default theme (fox/default) → the base assets dir.
 ///   - any other theme → `<base>/themes/<name>` only when it actually has a
 ///     `frames/` dir; otherwise `None`, so e.g. `ghost` with no art renders
-///     synthetically instead of wrongly showing the default Morgana frames.
+///     synthetically instead of wrongly showing the default Fox frames.
 pub fn on_disk_assets_root() -> Option<std::path::PathBuf> {
     let base = resolve_assets_root()?;
     let theme = active_theme();
@@ -347,13 +347,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_theme_names_use_cat_art() {
+    fn default_theme_names_use_default_art() {
         // The default-art names are classified before any filesystem lookup, so
         // these hold regardless of where the test runs.
-        for name in ["morgana", "default", "clawd", "MORGANA", "  Default  "] {
-            assert_eq!(theme_art_source(name), ThemeArt::DefaultCatArt, "name={name:?}");
+        for name in ["fox", "default", "FOX", "  Default  "] {
+            assert_eq!(theme_art_source(name), ThemeArt::DefaultArt, "name={name:?}");
         }
-        assert!(is_default_theme("morgana"));
+        assert!(is_default_theme("fox"));
         assert!(!is_default_theme("ghost"));
     }
 
@@ -365,10 +365,10 @@ mod tests {
     }
 
     #[test]
-    fn unknown_theme_falls_back_to_synthetic_cat() {
+    fn unknown_theme_falls_back_to_synthetic_fallback() {
         assert_eq!(
             theme_art_source("no-such-theme-xyz"),
-            ThemeArt::SyntheticCatFallback
+            ThemeArt::SyntheticFallback
         );
     }
 }

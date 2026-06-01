@@ -115,11 +115,11 @@ fn run_theme(name: Option<&str>) -> Result<()> {
     // Describe what a theme name renders, in one human line.
     let describe = |n: &str| -> String {
         match anim::theme_art_source(n) {
-            anim::ThemeArt::DefaultCatArt => "Morgana cat (on-disk sprite strips)".to_string(),
+            anim::ThemeArt::DefaultArt => "Fox (on-disk sprite frames)".to_string(),
             anim::ThemeArt::OnDiskPack(p) => format!("custom sprite pack at {}", p.display()),
             anim::ThemeArt::SyntheticGhost => "built-in synthetic ghost (no art files)".to_string(),
-            anim::ThemeArt::SyntheticCatFallback => {
-                "no art found — falls back to the synthetic cat".to_string()
+            anim::ThemeArt::SyntheticFallback => {
+                "no art found — falls back to the synthetic character".to_string()
             }
         }
     };
@@ -165,10 +165,10 @@ fn run_theme(name: Option<&str>) -> Result<()> {
             events::write_persisted_theme(&n)?;
             println!("Theme set to: {n}");
             println!("  → {}", describe(&n));
-            if matches!(anim::theme_art_source(&n), anim::ThemeArt::SyntheticCatFallback) {
+            if matches!(anim::theme_art_source(&n), anim::ThemeArt::SyntheticFallback) {
                 println!(
                     "\nNote: \"{n}\" isn't a built-in and has no on-disk pack, so it renders as \
-                     the synthetic cat.\nBuilt-ins: {}. Add custom art with \
+                     the synthetic character.\nBuilt-ins: {}. Add custom art with \
                      `cargo run --example slice -- --theme {n} <strip-dir>`.",
                     anim::BUILTIN_THEMES.join(", ")
                 );

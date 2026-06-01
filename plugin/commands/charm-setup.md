@@ -27,18 +27,18 @@ This finishes the "Charm CC" integration: it repoints `statusLine` in
    `"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe" watch` from the crate root) and that the
    ctx%/cost line updates as they work (statusLine fires ≤ every 300ms).
 
-## Sizing the cat column (avoid wrap on narrow terminals)
+## Sizing the fox column (avoid wrap on narrow terminals)
 
-The cat is a right column appended to each statusline row. Tune it via env vars on
+The fox is a right column appended to each statusline row. Tune it via env vars on
 the statusLine command (set in `~/.claude/settings.json` `statusLine.command`, or as
 user env vars):
 
-- `CLAWD_PET_ROWS` — cat height in terminal rows (width = rows×2). Default `6`.
-- `CLAWD_PET_GAP` — spaces between the statusline text and the cat. Default `2`.
+- `CLAWD_PET_ROWS` — fox height in terminal rows (width = rows×2). Default `6`.
+- `CLAWD_PET_GAP` — spaces between the statusline text and the fox. Default `2`.
 - `CLAWD_PET_WIDTH` — pin the column inside this total width (set to your terminal's
-  column count, e.g. `120`, to right-align the cat to the edge and keep it from
-  wrapping). `0`/unset = auto (cat sits just past the statusline text).
-- `CLAWD_PET_ASSETS` — absolute path to the `assets/` dir if the cat doesn't appear
+  column count, e.g. `120`, to right-align the fox to the edge and keep it from
+  wrapping). `0`/unset = auto (fox sits just past the statusline text).
+- `CLAWD_PET_ASSETS` — absolute path to the `assets/` dir if the fox doesn't appear
   (the statusLine command's cwd is the project, not the crate).
 
 Example statusLine command with sizing:

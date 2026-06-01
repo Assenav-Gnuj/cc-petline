@@ -1,6 +1,6 @@
-# clawd-pet 🐱
+# clawd-pet 🦊
 
-An animated **Morgana-cat companion** for [Claude Code](https://claude.com/claude-code) —
+An animated **Fox companion** for [Claude Code](https://claude.com/claude-code) —
 a sprite mascot that reacts to what Claude is doing, plus a Charm-styled statusline
 wrapper that feeds it live context%/cost.
 
@@ -10,16 +10,16 @@ Built in **Rust** (ratatui + the `image` crate), shipped as a Claude Code **plug
 
 ### 1. Statusline column (static-per-refresh, ~3fps)
 `clawd-pet statusline` wraps [ccstatusline](https://www.npmjs.com/package/ccstatusline):
-it renders the Charm statusline **and** appends the cat as an ANSI half-block column to
+it renders the Charm statusline **and** appends the fox as an ANSI half-block column to
 its right — with a **speech bubble** (rotating programming quotes) and the current mood.
 
-- The cat **frame-cycles** the real sprite frames by wall-clock, so it animates while you
+- The fox **frame-cycles** the real sprite frames by wall-clock, so it animates while you
   work and gently steps when idle (statusline can't loop — this is the ~3fps ceiling).
 - The speech bubble flows a **lolcat-style rainbow** gradient.
 - Wire it with the plugin's `/charm-setup` command (patches `settings.json`, reversible).
 
 ### 2. Animated pane (smooth, 25fps)
-`clawd-pet watch` is a full ratatui TUI — the cat animates smoothly with an animated
+`clawd-pet watch` is a full ratatui TUI — the fox animates smoothly with an animated
 rainbow speech bubble. Run it in a dedicated terminal pane (e.g. a Tabby split).
 
 ## How moods work
@@ -42,11 +42,12 @@ exit-2 (so Claude self-corrects).
 
 ## Themes (mascots)
 
-The mascot is themeable via `CLAWD_PET_THEME`:
+The mascot is themeable via `CLAWD_PET_THEME`. **Fox** is the default and the headline
+mascot — its sprite frames ship under `assets/frames/`.
 
 | Theme | What you get |
 |-------|--------------|
-| `morgana` *(default)* | the Morgana cat (your sliced sprite pack under `assets/frames/`) |
+| `fox` *(default)* | the **Fox** — the shipped sprite pack under `assets/frames/` |
 | `ghost` | a built-in **synthetic** spectral ghost — needs no art files |
 | *custom* | your own sprite pack under `assets/themes/<name>/frames/` |
 
@@ -62,9 +63,10 @@ cargo run --example slice -- --theme robot C:/path/to/robot/strips
 CLAWD_PET_THEME=robot
 ```
 
-A theme with no on-disk pack and no built-in character falls back to the default
-cat, so it never breaks. Built-in synthetic characters live in `src/` (the cat in
-`sprite.rs`, the ghost in `ghost.rs`); the selector is `src/theme.rs`.
+A theme with no on-disk pack and no built-in character falls back to a synthetic
+character, so it never breaks. Built-in synthetic characters live in `src/`
+(the fallback blob in `sprite.rs`, the ghost in `ghost.rs`); the selector is
+`src/theme.rs`.
 
 ## Build
 
@@ -79,18 +81,18 @@ The plugin bundles a prebuilt binary via `plugin/build.ps1`.
 
 | Var | Default | Effect |
 |-----|---------|--------|
-| `CLAWD_PET_ROWS` | 6 | cat height in terminal rows (width = rows×2) |
-| `CLAWD_PET_GAP` | 2 | spacing between statusline text and the cat |
+| `CLAWD_PET_ROWS` | 6 | fox height in terminal rows (width = rows×2) |
+| `CLAWD_PET_GAP` | 2 | spacing between statusline text and the fox |
 | `CLAWD_PET_WIDTH` | auto | pin the column inside this total width (set to terminal cols) |
 | `CLAWD_PET_BUBBLE` | 40 | speech-bubble inner text width (0 = no bubble) |
 | `CLAWD_PET_FPS_MS` | 120 | statusline frame period (sampled per refresh) |
 | `CLAWD_PET_ASSETS` | auto | path to the `assets/` dir if not auto-resolved |
-| `CLAWD_PET_THEME` | morgana | mascot theme: `morgana`, `ghost`, or a custom pack name |
+| `CLAWD_PET_THEME` | fox | mascot theme: `fox`, `ghost`, or a custom pack name |
 | `CLAWD_PET_GUARD` | unset | `1` enables the PreToolUse command guard |
 
 ## Notes
 
-- **Renderer:** transparent Unicode half-blocks (sixel does not render in Tabby). The cat
+- **Renderer:** transparent Unicode half-blocks (sixel does not render in Tabby). The fox
   sits on the terminal background — no black box.
 - **Assets:** sprite media (`assets/source/*`, `assets/frames/**`) is **gitignored** —
   regenerate frames from your own strips via `cargo run --example slice`.
