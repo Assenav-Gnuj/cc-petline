@@ -2,9 +2,9 @@
 
 The animation engine (`src/anim.rs::build_library`) loads frames from here when
 present, and falls back to the synthetic `src/sprite.rs` generators otherwise.
-The shipped **Fox** pack lives here (one folder per mood); the media is
-**gitignored**, so a fresh checkout runs on the synthetic fallback until you add
-frames.
+The shipped **Fox** pack lives here (one folder per mood) and is committed to the
+repo under **CC BY 4.0** (see `assets/LICENSE`). Custom theme packs go under
+`assets/themes/<name>/frames/` and are gitignored.
 
 ## Layout
 

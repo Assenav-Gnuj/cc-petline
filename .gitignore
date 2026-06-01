@@ -1,7 +1,6 @@
 /target
 
-# Sprite frame media — local only, gitignored (regenerate via examples/slice.rs).
-/assets/frames/*/*.png
+# The shipped Fox frame pack (assets/frames/**) IS committed — CC-BY-4.0, see assets/LICENSE.
 # Custom theme sprite packs (sliced art) — keep structure, ignore the media.
 /assets/themes/*/frames/*/*.png
 # Raw source art staged locally — never committed.

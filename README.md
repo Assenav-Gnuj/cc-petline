@@ -94,5 +94,12 @@ The plugin bundles a prebuilt binary via `plugin/build.ps1`.
 
 - **Renderer:** transparent Unicode half-blocks (sixel does not render in Tabby). The fox
   sits on the terminal background — no black box.
-- **Assets:** sprite media (`assets/source/*`, `assets/frames/**`) is **gitignored** —
-  regenerate frames from your own strips via `cargo run --example slice`.
+- **Assets:** the **Fox** frame pack ships in the repo (`assets/frames/**`). Custom theme
+  packs under `assets/themes/<name>/frames/` are gitignored — bring your own via
+  `cargo run --example slice`.
+
+## License
+
+- **Code:** [MIT](LICENSE).
+- **Sprite art** (the Fox frames under `assets/frames/`): [CC BY 4.0](assets/LICENSE) —
+  © 2026 Oreo. Reuse freely with attribution.
