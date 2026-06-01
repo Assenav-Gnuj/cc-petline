@@ -54,10 +54,14 @@ s.statusLine = {
   type: "command",
   command: `"${exe}" statusline`,
   padding: 0,
-  refreshInterval: 10,
+  // 1s is the minimum (refreshInterval is in SECONDS) and the fastest the
+  // statusline re-runs while idle — needed so the pet actually animates
+  // (it picks a frame per invocation). Higher values look near-frozen.
+  refreshInterval: 1,
 };
 save(s);
 
 console.log("statusLine -> clawd-pet wrapper:");
 console.log("  " + s.statusLine.command);
+console.log("  refreshInterval: 1s (max idle animation rate)");
 console.log("backup: settings.json.bak-clawdpet ; revert: node setup-statusline.js --revert");

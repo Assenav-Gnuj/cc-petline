@@ -11,6 +11,11 @@ This finishes the "Charm CC" integration: it repoints `statusLine` in
 2. extracts **context% + session cost** into `~/.clawd-pet/context`, which the pet's
    `watch` pane reads to show a colored ctx% / `$cost` line and react near the limit.
 
+It also sets `refreshInterval: 1` (seconds — the minimum) so the statusline re-runs
+once a second while idle; that's the fastest Claude Code allows and what lets the
+statusline fox visibly animate (it picks a frame per refresh). Smooth motion still
+lives in the `watch` pane.
+
 ## Do this
 
 1. Confirm the bundled binary exists: `${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe`.
