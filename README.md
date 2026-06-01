@@ -102,4 +102,4 @@ The plugin bundles a prebuilt binary via `plugin/build.ps1`.
 
 - **Code:** [MIT](LICENSE).
 - **Sprite art** (the Fox frames under `assets/frames/`): [CC BY 4.0](assets/LICENSE) —
-  © 2026 Oreo. Reuse freely with attribution.
+  © 2026 Vanessa Jung - Synthologies (synthologies.com) | Github: Assenav-Gnuj. Reuse freely with attribution.

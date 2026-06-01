@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "description": "Animated Fox companion that reacts to Claude Code activity in a Tabby pane. Hooks push moods to the pet; run `cc-petline watch` in a pane to see it.",
   "author": {
-    "name": "Oreo"
+    "name": "Vanessa Jung",
+    "url": "https://synthologies.com"
   },
-  "keywords": ["pet", "companion", "tui", "sprite", "fun"]
+  "keywords": [
+    "pet",
+    "companion",
+    "tui",
+    "sprite",
+    "fun"
+  ]
 }
