@@ -45,7 +45,7 @@ fn main() -> Result<()> {
     let forced_size: Option<u32> = pos.get(1).and_then(|s| s.parse().ok());
 
     // Default → assets/frames (the shipped Fox default art); --theme <name> → a
-    // pack at assets/themes/<name>/frames that CLAWD_PET_THEME=<name> picks up.
+    // pack at assets/themes/<name>/frames that CC_PETLINE_THEME=<name> picks up.
     let out_root = match &theme {
         Some(t) => PathBuf::from("assets/themes").join(t).join("frames"),
         None => PathBuf::from("assets/frames"),

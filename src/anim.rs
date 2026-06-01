@@ -1,4 +1,4 @@
-// Animation engine + frame library for clawd-pet.
+// Animation engine + frame library for cc-petline.
 //
 // An `Animation` is a list of frames plus playback timing. The `Player` advances
 // the current animation per tick. The `Library` maps each `PetState` to an
@@ -7,7 +7,7 @@
 // ASSET SEAM: `build_library` prefers on-disk PNG frames and falls back to the
 // synthetic character (see src/theme.rs) when no assets are present. Drop frames
 // into `<assets>/frames/<state>/*.png` (default mascot) or
-// `<assets>/themes/<name>/frames/<state>/*.png` (a CLAWD_PET_THEME pack), sorted
+// `<assets>/themes/<name>/frames/<state>/*.png` (a CC_PETLINE_THEME pack), sorted
 // lexically = playback order, where <state> is PetState::dir_name().
 
 use std::collections::HashMap;
@@ -94,15 +94,15 @@ impl Player {
 // ---- Themes --------------------------------------------------------------------
 
 /// The active theme name, lowercased. Resolution order:
-///   1. `CLAWD_PET_THEME` env var (lets a pane profile / shell export override);
-///   2. the persisted theme file (`~/.clawd-pet/theme`, written by `clawd-pet
-///      theme <name>` / the `/clawd-theme` command — survives across the separate
+///   1. `CC_PETLINE_THEME` env var (lets a pane profile / shell export override);
+///   2. the persisted theme file (`~/.cc-petline/theme`, written by `cc-petline
+///      theme <name>` / the `/cc-petline-theme` command — survives across the separate
 ///      processes Claude Code spawns for the statusline);
 ///   3. default "fox".
 /// A theme swaps the mascot: either an on-disk sprite pack under
 /// `<assets>/themes/<name>/frames/`, or a built-in synthetic character.
 pub fn active_theme() -> String {
-    if let Some(t) = std::env::var("CLAWD_PET_THEME")
+    if let Some(t) = std::env::var("CC_PETLINE_THEME")
         .ok()
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
@@ -183,7 +183,7 @@ pub fn resolve_assets_root() -> Option<std::path::PathBuf> {
     let has_frames = |p: &Path| p.join("frames").is_dir();
 
     // 1. Explicit override.
-    if let Ok(p) = std::env::var("CLAWD_PET_ASSETS") {
+    if let Ok(p) = std::env::var("CC_PETLINE_ASSETS") {
         let p = std::path::PathBuf::from(p);
         if has_frames(&p) {
             return Some(p);
@@ -195,7 +195,7 @@ pub fn resolve_assets_root() -> Option<std::path::PathBuf> {
         return Some(cwd);
     }
     // 3. Relative to the executable: <exe_dir>/../../assets covers both
-    //    target/<profile>/clawd-pet.exe and plugin/bin/clawd-pet.exe.
+    //    target/<profile>/cc-petline.exe and plugin/bin/cc-petline.exe.
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
             for up in [dir.join("../../assets"), dir.join("../assets"), dir.join("assets")] {

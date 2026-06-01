@@ -1,4 +1,4 @@
-# clawd-pet 🦊
+# cc-petline 🦊
 
 An animated **Fox companion** for [Claude Code](https://claude.com/claude-code) —
 a sprite mascot that reacts to what Claude is doing, plus a Charm-styled statusline
@@ -9,7 +9,7 @@ Built in **Rust** (ratatui + the `image` crate), shipped as a Claude Code **plug
 ## Two ways to run
 
 ### 1. Statusline column (static-per-refresh, ~3fps)
-`clawd-pet statusline` wraps [ccstatusline](https://www.npmjs.com/package/ccstatusline):
+`cc-petline statusline` wraps [ccstatusline](https://www.npmjs.com/package/ccstatusline):
 it renders the Charm statusline **and** appends the fox as an ANSI half-block column to
 its right — with a **speech bubble** (rotating programming quotes) and the current mood.
 
@@ -19,13 +19,13 @@ its right — with a **speech bubble** (rotating programming quotes) and the cur
 - Wire it with the plugin's `/charm-setup` command (patches `settings.json`, reversible).
 
 ### 2. Animated pane (smooth, 25fps)
-`clawd-pet watch` is a full ratatui TUI — the fox animates smoothly with an animated
+`cc-petline watch` is a full ratatui TUI — the fox animates smoothly with an animated
 rainbow speech bubble. Run it in a dedicated terminal pane (e.g. a Tabby split).
 
 ## How moods work
 
-The plugin's hooks call `clawd-pet emit <Event>`, which maps a Claude Code hook event to a
-mood and writes `~/.clawd-pet/state`. Both the statusline and the pane read that file.
+The plugin's hooks call `cc-petline emit <Event>`, which maps a Claude Code hook event to a
+mood and writes `~/.cc-petline/state`. Both the statusline and the pane read that file.
 
 | Hook | Mood |
 |------|------|
@@ -37,12 +37,12 @@ mood and writes `~/.clawd-pet/state`. Both the statusline and the pane read that
 | PreCompact / SessionEnd | sleepy |
 
 There's also an **opt-in** token-saver `guard` hook (PreToolUse): off by default, set
-`CLAWD_PET_GUARD=1` to block a small denylist of catastrophic/wasteful Bash commands via
+`CC_PETLINE_GUARD=1` to block a small denylist of catastrophic/wasteful Bash commands via
 exit-2 (so Claude self-corrects).
 
 ## Themes (mascots)
 
-The mascot is themeable via `CLAWD_PET_THEME`. **Fox** is the default and the headline
+The mascot is themeable via `CC_PETLINE_THEME`. **Fox** is the default and the headline
 mascot — its sprite frames ship under `assets/frames/`.
 
 | Theme | What you get |
@@ -52,7 +52,7 @@ mascot — its sprite frames ship under `assets/frames/`.
 | *custom* | your own sprite pack under `assets/themes/<name>/frames/` |
 
 ```sh
-CLAWD_PET_THEME=ghost   # instant, no art needed (synthetic character)
+CC_PETLINE_THEME=ghost   # instant, no art needed (synthetic character)
 ```
 
 Add your **own** mascot by slicing horizontal strips into a theme pack, then
@@ -60,7 +60,7 @@ selecting it:
 
 ```sh
 cargo run --example slice -- --theme robot C:/path/to/robot/strips
-CLAWD_PET_THEME=robot
+CC_PETLINE_THEME=robot
 ```
 
 A theme with no on-disk pack and no built-in character falls back to a synthetic
@@ -71,7 +71,7 @@ character, so it never breaks. Built-in synthetic characters live in `src/`
 ## Build
 
 ```sh
-cargo build --release          # binary at target/release/clawd-pet[.exe]
+cargo build --release          # binary at target/release/cc-petline[.exe]
 cargo run --example slice      # slice sprite strips → assets/frames/<state>/*.png
 ```
 
@@ -81,14 +81,14 @@ The plugin bundles a prebuilt binary via `plugin/build.ps1`.
 
 | Var | Default | Effect |
 |-----|---------|--------|
-| `CLAWD_PET_ROWS` | 6 | fox height in terminal rows (width = rows×2) |
-| `CLAWD_PET_GAP` | 2 | spacing between statusline text and the fox |
-| `CLAWD_PET_WIDTH` | auto | pin the column inside this total width (set to terminal cols) |
-| `CLAWD_PET_BUBBLE` | 40 | speech-bubble inner text width (0 = no bubble) |
-| `CLAWD_PET_FPS_MS` | 120 | statusline frame period (sampled per refresh) |
-| `CLAWD_PET_ASSETS` | auto | path to the `assets/` dir if not auto-resolved |
-| `CLAWD_PET_THEME` | fox | mascot theme: `fox`, `ghost`, or a custom pack name |
-| `CLAWD_PET_GUARD` | unset | `1` enables the PreToolUse command guard |
+| `CC_PETLINE_ROWS` | 6 | fox height in terminal rows (width = rows×2) |
+| `CC_PETLINE_GAP` | 2 | spacing between statusline text and the fox |
+| `CC_PETLINE_WIDTH` | auto | pin the column inside this total width (set to terminal cols) |
+| `CC_PETLINE_BUBBLE` | 40 | speech-bubble inner text width (0 = no bubble) |
+| `CC_PETLINE_FPS_MS` | 120 | statusline frame period (sampled per refresh) |
+| `CC_PETLINE_ASSETS` | auto | path to the `assets/` dir if not auto-resolved |
+| `CC_PETLINE_THEME` | fox | mascot theme: `fox`, `ghost`, or a custom pack name |
+| `CC_PETLINE_GUARD` | unset | `1` enables the PreToolUse command guard |
 
 ## Notes
 

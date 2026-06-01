@@ -1,4 +1,4 @@
-// Speech / commentary for clawd-pet.
+// Speech / commentary for cc-petline.
 //
 // The pet shows a rotating speech bubble: random commentary, plus quotations with
 // attribution (the "citation"). Lines are mood-aware — each PetState has its own

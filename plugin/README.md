@@ -1,6 +1,6 @@
-# clawd-pet plugin
+# cc-petline plugin
 
-Packages the **hook-wiring half** of clawd-pet so Claude Code drives the pet's moods.
+Packages the **hook-wiring half** of cc-petline so Claude Code drives the pet's moods.
 The pet itself (the animated pane) runs separately — plugins can't host a persistent
 visual pane, only commands/agents/skills/hooks/MCP.
 
@@ -11,23 +11,23 @@ plugin/
 ├── .claude-plugin/
 │   ├── plugin.json              # plugin manifest
 │   └── marketplace.json         # marketplace manifest (lists this plugin, source "./")
-├── hooks/hooks.json             # 7 events → `clawd-pet emit <event>`
-├── commands/clawd-pet.md        # /clawd-pet — launch help + state explainer
+├── hooks/hooks.json             # 7 events → `cc-petline emit <event>`
+├── commands/cc-petline.md        # /cc-petline — launch help + state explainer
 ├── commands/charm-setup.md      # /charm-setup — wire statusLine → pet wrapper
 ├── scripts/setup-statusline.js  # patches settings.json (run by /charm-setup)
-└── bin/clawd-pet.exe            # the binary (copied by build.ps1; gitignored)
+└── bin/cc-petline.exe            # the binary (copied by build.ps1; gitignored)
 ```
 
-The watcher (`clawd-pet watch`) is **not** owned by the plugin — run it in a Tabby pane.
+The watcher (`cc-petline watch`) is **not** owned by the plugin — run it in a Tabby pane.
 
 ## "Charm CC" — statusline + pet integration
 
 The binary has three modes:
-- `clawd-pet watch` — the pet pane (default)
-- `clawd-pet emit <event>` — hook bridge → mood (writes `~/.clawd-pet/state`)
-- `clawd-pet statusline` — **statusline wrapper**: forwards the payload to
+- `cc-petline watch` — the pet pane (default)
+- `cc-petline emit <event>` — hook bridge → mood (writes `~/.cc-petline/state`)
+- `cc-petline statusline` — **statusline wrapper**: forwards the payload to
   ccstatusline (renders the Charm statusline) AND extracts context% + cost into
-  `~/.clawd-pet/context`, which the pet reads to show a colored `ctx% $cost` line.
+  `~/.cc-petline/context`, which the pet reads to show a colored `ctx% $cost` line.
 
 Run **`/charm-setup`** once to point `statusLine` at the wrapper. Revert with
 `node scripts/setup-statusline.js --revert`. A plugin can't set `statusLine` itself
@@ -41,17 +41,17 @@ Run **`/charm-setup`** once to point `statusLine` at the wrapper. Revert with
    powershell ./plugin/build.ps1
    ```
 
-   This does `cargo build --release` and copies `target/release/clawd-pet.exe` to
+   This does `cargo build --release` and copies `target/release/cc-petline.exe` to
    `plugin/bin/`. The pet's `assets/` must be reachable from wherever you run `watch`
    (the binary loads `assets/frames/<state>/` relative to its working dir), so launch
-   the pane from the crate root: `cd C:\Users\Oreo\charm\clawd-pet; ./plugin/bin/clawd-pet.exe watch`.
+   the pane from the crate root: `cd C:\Users\Oreo\charm\clawd-pet; ./plugin/bin/cc-petline.exe watch`.
 
 2. Register + install (the dir is a single-plugin marketplace via
    `.claude-plugin/marketplace.json`):
 
    ```
    /plugin marketplace add C:\Users\Oreo\charm\clawd-pet\plugin
-   /plugin            → install clawd-pet → enable
+   /plugin            → install cc-petline → enable
    ```
 
    Hooks register automatically and toggle as a unit when you disable/enable the plugin.
@@ -59,9 +59,9 @@ Run **`/charm-setup`** once to point `statusLine` at the wrapper. Revert with
 ## How the two halves talk
 
 ```
-Claude Code event ─▶ plugin hook ─▶ clawd-pet emit <event>
-                                        └─ writes ~/.clawd-pet/state  (mood + nanos)
-clawd-pet watch (Tabby pane) ──poll 5x/s──▶ reads state ─▶ animates mood + quip
+Claude Code event ─▶ plugin hook ─▶ cc-petline emit <event>
+                                        └─ writes ~/.cc-petline/state  (mood + nanos)
+cc-petline watch (Tabby pane) ──poll 5x/s──▶ reads state ─▶ animates mood + quip
 ```
 
 ## Boundary (why it's split)

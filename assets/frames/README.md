@@ -1,4 +1,4 @@
-# clawd-pet frame assets
+# cc-petline frame assets
 
 The animation engine (`src/anim.rs::build_library`) loads frames from here when
 present, and falls back to the synthetic `src/sprite.rs` generators otherwise.

@@ -1,11 +1,11 @@
 {
-  "name": "clawd-pet",
+  "name": "cc-petline",
   "owner": {
     "name": "Oreo"
   },
   "plugins": [
     {
-      "name": "clawd-pet",
+      "name": "cc-petline",
       "source": "./",
       "version": "0.1.0",
       "description": "Animated Fox companion that reacts to Claude Code activity in a Tabby pane, plus a Charm statusline wrapper feeding it live context%/cost."

@@ -1,10 +1,10 @@
 [package]
-name = "clawd-pet"
+name = "cc-petline"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
 description = "Animated Fox companion for Claude Code: a sprite mascot that reacts to activity, plus a Charm statusline wrapper."
-repository = "https://github.com/Assenav-Gnuj/claudeline-pet"
+repository = "https://github.com/Assenav-Gnuj/cc-petline"
 
 [dependencies]
 anyhow = "1.0.102"

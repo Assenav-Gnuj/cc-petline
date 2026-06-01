@@ -1,13 +1,13 @@
-// clawd-pet — animated sprite companion for Claude Code, rendered in a Tabby pane.
+// cc-petline — animated sprite companion for Claude Code, rendered in a Tabby pane.
 //
 // Two modes (see `main` dispatch):
-//   clawd-pet              → long-running TUI: renders the pet, polls the state file
-//   clawd-pet watch        → same as above (explicit)
-//   clawd-pet emit <event> → fast, no TUI: maps a Claude Code hook event to a mood
+//   cc-petline              → long-running TUI: renders the pet, polls the state file
+//   cc-petline watch        → same as above (explicit)
+//   cc-petline emit <event> → fast, no TUI: maps a Claude Code hook event to a mood
 //                            and writes the state file the TUI watches. Called by
 //                            the plugin's hooks. (See src/events.rs.)
-//   clawd-pet theme [name] → get/set the active mascot theme (persisted to
-//                            ~/.clawd-pet/theme). Drives the /clawd-theme command.
+//   cc-petline theme [name] → get/set the active mascot theme (persisted to
+//                            ~/.cc-petline/theme). Drives the /cc-petline-theme command.
 //
 // Phase 0 proved sixel does NOT work in Tabby. We render via our own transparent
 // halfblocks (render.rs); `r` cycles halfblocks → sextant → quadrant.
@@ -85,19 +85,19 @@ fn main() -> Result<()> {
             Ok(())
         }
         // Token-saver PreToolUse guard. Reads the piped hook JSON and, when
-        // enabled (CLAWD_PET_GUARD=1), blocks a small denylist of wasteful/
+        // enabled (CC_PETLINE_GUARD=1), blocks a small denylist of wasteful/
         // dangerous commands via exit code 2 (Claude Code feeds stderr back so
         // Claude self-corrects). Default OFF → always exit 0, never interferes.
         Some("guard") => events::run_guard(),
         // Statusline wrapper: render via ccstatusline + extract context%/cost for the pet.
         Some("statusline") => context::run_statusline(),
-        // Get/set the active mascot theme (drives the /clawd-theme command).
+        // Get/set the active mascot theme (drives the /cc-petline-theme command).
         Some("theme") => run_theme(args.get(1).map(String::as_str)),
         // Long-running TUI (default, or explicit `watch`).
         Some("watch") | None => watch(),
         Some(other) => {
             eprintln!(
-                "clawd-pet: unknown command {other:?} \
+                "cc-petline: unknown command {other:?} \
                  (use: watch | emit <event> | statusline | theme [name])"
             );
             std::process::exit(2);
@@ -105,12 +105,12 @@ fn main() -> Result<()> {
     }
 }
 
-/// `clawd-pet theme [name]` — get or set the active mascot theme.
+/// `cc-petline theme [name]` — get or set the active mascot theme.
 ///
 /// With no name, prints the current theme (and where it resolved from), the art
 /// source, and the available themes. With a name, persists it to
-/// `~/.clawd-pet/theme` (read by `anim::active_theme`) and reports what will
-/// render. This is the binary side of the `/clawd-theme` slash command.
+/// `~/.cc-petline/theme` (read by `anim::active_theme`) and reports what will
+/// render. This is the binary side of the `/cc-petline-theme` slash command.
 fn run_theme(name: Option<&str>) -> Result<()> {
     // Describe what a theme name renders, in one human line.
     let describe = |n: &str| -> String {
@@ -141,21 +141,21 @@ fn run_theme(name: Option<&str>) -> Result<()> {
     match name {
         None => {
             let active = anim::active_theme();
-            let env_set = std::env::var("CLAWD_PET_THEME")
+            let env_set = std::env::var("CC_PETLINE_THEME")
                 .ok()
                 .map(|s| s.trim().to_lowercase())
                 .filter(|s| !s.is_empty());
             let source = if env_set.as_deref() == Some(active.as_str()) {
-                "CLAWD_PET_THEME env var"
+                "CC_PETLINE_THEME env var"
             } else if events::read_persisted_theme().as_deref() == Some(active.as_str()) {
-                "~/.clawd-pet/theme"
+                "~/.cc-petline/theme"
             } else {
                 "default"
             };
             println!("Active theme: {active}  (from {source})");
             println!("  → {}", describe(&active));
             println!("\nAvailable themes:\n{}", listing());
-            println!("\nSet with: clawd-pet theme <name>");
+            println!("\nSet with: cc-petline theme <name>");
         }
         Some(n) => {
             let n = n.trim().to_lowercase();
@@ -173,11 +173,11 @@ fn run_theme(name: Option<&str>) -> Result<()> {
                     anim::BUILTIN_THEMES.join(", ")
                 );
             }
-            // The persisted theme only applies when CLAWD_PET_THEME is unset (env wins).
-            if let Ok(env) = std::env::var("CLAWD_PET_THEME") {
+            // The persisted theme only applies when CC_PETLINE_THEME is unset (env wins).
+            if let Ok(env) = std::env::var("CC_PETLINE_THEME") {
                 if !env.trim().is_empty() && env.trim().to_lowercase() != n {
                     println!(
-                        "\nWarning: CLAWD_PET_THEME={env:?} is set in this environment and \
+                        "\nWarning: CC_PETLINE_THEME={env:?} is set in this environment and \
                          overrides the saved theme. Unset it for the saved theme to take effect."
                     );
                 }
@@ -226,7 +226,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (u8, u8, u8) {
 }
 
 fn watch() -> Result<()> {
-    // Honor the active theme (CLAWD_PET_THEME): a non-default theme with an on-disk
+    // Honor the active theme (CC_PETLINE_THEME): a non-default theme with an on-disk
     // pack under assets/themes/<name>/frames resolves here; a themeless/art-less
     // theme yields None → build_library uses the synthetic character for all states.
     let assets_root = anim::on_disk_assets_root();
@@ -295,7 +295,7 @@ fn run(
             let area = f.area();
             let block = Block::bordered()
                 .border_style(Style::new().fg(PURPLE))
-                .title(Line::from(" clawd-pet · phase 1 ".bold().fg(CREAM)).centered());
+                .title(Line::from(" cc-petline · phase 1 ".bold().fg(CREAM)).centered());
             let inner = block.inner(area);
             f.render_widget(block, area);
 

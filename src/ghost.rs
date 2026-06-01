@@ -1,5 +1,5 @@
 // A built-in synthetic "ghost" mascot — the alternate theme that ships without
-// any art files (selected via CLAWD_PET_THEME=ghost). Self-contained: its own
+// any art files (selected via CC_PETLINE_THEME=ghost). Self-contained: its own
 // canvas + draw helpers so it never depends on sprite.rs internals.
 //
 // A spectral pale body: rounded dome on top, straight sides, a wavy/scalloped

@@ -1,4 +1,4 @@
-// Procedural sprite generation for clawd-pet.
+// Procedural sprite generation for cc-petline.
 //
 // These synthetic frames are the BUILT-IN FALLBACK: real PNG frames load
 // from assets/frames/<state>/ when present (see anim::build_library). Since those

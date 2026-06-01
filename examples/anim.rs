@@ -1,4 +1,4 @@
-// clawd-pet — halfblocks animation test.
+// cc-petline — halfblocks animation test.
 // Cycles 3 hand-built frames (bounce + blink) to sanity-check that halfblock
 // sprite playback looks good.
 //
@@ -107,7 +107,7 @@ fn run(
             let area = f.area();
             let block = Block::bordered()
                 .border_style(Style::new().fg(PURPLE))
-                .title(Line::from(" clawd-pet · halfblocks anim test ".bold().fg(CREAM)).centered());
+                .title(Line::from(" cc-petline · halfblocks anim test ".bold().fg(CREAM)).centered());
             let inner = block.inner(area);
             f.render_widget(block, area);
 

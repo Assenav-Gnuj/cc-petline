@@ -1,10 +1,10 @@
 // Statusline-data bridge: the "Charm CC" integration (statusline ↔ pet).
 //
-// `clawd-pet statusline` is wired as Claude Code's `statusLine` command (via the
+// `cc-petline statusline` is wired as Claude Code's `statusLine` command (via the
 // plugin's /charm-setup). Claude Code pipes a JSON payload to it (debounced 300ms).
 // This module:
 //   1. reads context% + cost straight from the payload (verified field paths),
-//   2. writes a tiny `~/.clawd-pet/context` file the pet's `watch` loop reads,
+//   2. writes a tiny `~/.cc-petline/context` file the pet's `watch` loop reads,
 //   3. forwards the SAME payload to ccstatusline and relays its rendered line,
 //      so the Charm statusline still displays normally.
 //
@@ -37,14 +37,14 @@ fn context_file() -> PathBuf {
     let home = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".clawd-pet").join("context")
+    PathBuf::from(home).join(".cc-petline").join("context")
 }
 
-/// The statusLine wrapper entry point (`clawd-pet statusline`):
+/// The statusLine wrapper entry point (`cc-petline statusline`):
 /// read stdin payload → write context file → render ccstatusline + a pet column → stdout.
 ///
 /// The pet here is a STATIC mood frame (the statusline only redraws per message /
-/// refresh, so it can't animate). The mood is read from the same `~/.clawd-pet/state`
+/// refresh, so it can't animate). The mood is read from the same `~/.cc-petline/state`
 /// file the hooks write via `emit`, so the pet reflects what Claude is doing.
 pub fn run_statusline() -> Result<()> {
     let mut payload = String::new();
@@ -61,15 +61,15 @@ pub fn run_statusline() -> Result<()> {
 }
 
 /// Pet column defaults (overridable via env so it can't wrap a narrow terminal):
-///   CLAWD_PET_ROWS   — pet height in terminal rows (width = rows*2). Default 5
+///   CC_PETLINE_ROWS   — pet height in terminal rows (width = rows*2). Default 5
 ///                      (= 10px tall, the native grid the sprites are authored on,
 ///                      so 120px frames downsample at a clean 12:1 with no row drop).
-///   CLAWD_PET_GAP    — spaces between statusline text and the pet. Default 2.
-///   CLAWD_PET_WIDTH  — total width budget. Caps the whole block so it never
+///   CC_PETLINE_GAP    — spaces between statusline text and the pet. Default 2.
+///   CC_PETLINE_WIDTH  — total width budget. Caps the whole block so it never
 ///                      overflows the terminal (which would clip the fox/mood).
 ///                      Unset = auto-detect (COLUMNS env, then a live terminal
 ///                      query, then 120). Set it to your terminal columns to pin it.
-///   CLAWD_PET_BUBBLE — MAX inner width of the rotating-quote speech bubble
+///   CC_PETLINE_BUBBLE — MAX inner width of the rotating-quote speech bubble
 ///                      (clamp 12..100, default 28). The bubble auto-shrinks below
 ///                      this to fit the width budget and is dropped only when even
 ///                      a minimal (inner 12) bubble won't fit. 0 = off entirely.
@@ -93,12 +93,12 @@ fn detect_term_width() -> Option<usize> {
 
 /// Join the ccstatusline output (left) with a pet sprite column (right), aligned
 /// so the pet forms a clean right column like a sidebar. Sizing is env-driven so
-/// it never wraps: set CLAWD_PET_WIDTH to your terminal columns to pin it.
+/// it never wraps: set CC_PETLINE_WIDTH to your terminal columns to pin it.
 fn compose_with_pet(status: &str) -> String {
-    let rows_cfg = env_usize("CLAWD_PET_ROWS").unwrap_or(DEFAULT_PET_ROWS as usize) as u16;
+    let rows_cfg = env_usize("CC_PETLINE_ROWS").unwrap_or(DEFAULT_PET_ROWS as usize) as u16;
     let pet_rows = rows_cfg.clamp(1, 24);
-    let gap = env_usize("CLAWD_PET_GAP").unwrap_or(DEFAULT_PET_GAP);
-    let total_width = env_usize("CLAWD_PET_WIDTH").filter(|w| *w > 0);
+    let gap = env_usize("CC_PETLINE_GAP").unwrap_or(DEFAULT_PET_GAP);
+    let total_width = env_usize("CC_PETLINE_WIDTH").filter(|w| *w > 0);
 
     // Current mood from the shared state file (hooks/emit write it); default Idle.
     let raw = crate::events::read_raw();
@@ -118,8 +118,8 @@ fn compose_with_pet(status: &str) -> String {
     // every refresh, so we pick the frame for the CURRENT wall-clock time. Modulo
     // advances frames in order regardless of how often refreshes land — smooth
     // during activity (frequent refreshes), gently jumping when idle. Frame period
-    // via CLAWD_PET_FPS_MS (default 120ms ≈ 8fps source rate, sampled at refresh).
-    let frame_ms = env_usize("CLAWD_PET_FPS_MS").unwrap_or(120).max(1) as u128;
+    // via CC_PETLINE_FPS_MS (default 120ms ≈ 8fps source rate, sampled at refresh).
+    let frame_ms = env_usize("CC_PETLINE_FPS_MS").unwrap_or(120).max(1) as u128;
     let now_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
@@ -142,7 +142,7 @@ fn compose_with_pet(status: &str) -> String {
     // Available width budget. The composed line must never exceed the terminal,
     // or Claude Code truncates/wraps it — clipping the fox + mood word and even
     // disturbing its own "auto-accept" indicator below. Resolve in order:
-    //   CLAWD_PET_WIDTH (explicit pin) → COLUMNS env → live terminal query → 120.
+    //   CC_PETLINE_WIDTH (explicit pin) → COLUMNS env → live terminal query → 120.
     let avail_w = total_width
         .or_else(|| env_usize("COLUMNS").filter(|w| *w > 0))
         .or_else(detect_term_width)
@@ -156,11 +156,11 @@ fn compose_with_pet(status: &str) -> String {
     // fits the terminal, so the mood never wraps to col 0 and the box never spills
     // past the statusline's rows.
     //
-    // The bubble AUTO-SHRINKS to the width budget. CLAWD_PET_BUBBLE sets the MAX
+    // The bubble AUTO-SHRINKS to the width budget. CC_PETLINE_BUBBLE sets the MAX
     // inner text width (default 28, clamp 12..100); it shrinks below that as the
     // terminal narrows. If even a minimal (inner 12) bubble won't fit, fall back to
     // just the mood word inline beside the fox (when that fits). 0 = bubble off.
-    let bubble_max = env_usize("CLAWD_PET_BUBBLE").unwrap_or(28);
+    let bubble_max = env_usize("CC_PETLINE_BUBBLE").unwrap_or(28);
     let mood_plain = format!("\u{bb} {}", mood_word(mood));
     // Rainbow phase flows the lolcat gradient over the bubble. Tie it to wall-clock
     // so it drifts each refresh (the bubble text itself only changes on mood change).
@@ -199,7 +199,7 @@ fn compose_with_pet(status: &str) -> String {
     let rows = rows.max(b_off + right.len());
 
     // Pet sits just past the statusline text when a right column is shown (so it
-    // has room beside it); otherwise honour CLAWD_PET_WIDTH, never overlapping.
+    // has room beside it); otherwise honour CC_PETLINE_WIDTH, never overlapping.
     let pet_col = if !right.is_empty() {
         status_w + gap
     } else {

@@ -2,14 +2,14 @@
   "SessionStart": [
     {
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit SessionStart" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit SessionStart" }
       ]
     }
   ],
   "UserPromptSubmit": [
     {
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit UserPromptSubmit" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit UserPromptSubmit" }
       ]
     }
   ],
@@ -17,8 +17,8 @@
     {
       "matcher": "*",
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit PreToolUse" },
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" guard" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit PreToolUse" },
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" guard" }
       ]
     }
   ],
@@ -26,42 +26,42 @@
     {
       "matcher": "*",
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit PostToolUse" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit PostToolUse" }
       ]
     }
   ],
   "Notification": [
     {
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit Notification" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit Notification" }
       ]
     }
   ],
   "SubagentStop": [
     {
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit SubagentStop" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit SubagentStop" }
       ]
     }
   ],
   "Stop": [
     {
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit Stop" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit Stop" }
       ]
     }
   ],
   "PreCompact": [
     {
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit PreCompact" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit PreCompact" }
       ]
     }
   ],
   "SessionEnd": [
     {
       "hooks": [
-        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/clawd-pet.exe\" emit SessionEnd" }
+        { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/cc-petline.exe\" emit SessionEnd" }
       ]
     }
   ]

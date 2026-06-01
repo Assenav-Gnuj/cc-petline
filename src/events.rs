@@ -1,12 +1,12 @@
-// Event bridge for clawd-pet (Phase 3).
+// Event bridge for cc-petline (Phase 3).
 //
-// Claude Code hooks call `clawd-pet emit <event>` (fast, no TUI). That maps the
+// Claude Code hooks call `cc-petline emit <event>` (fast, no TUI). That maps the
 // hook event to a mood and appends it to a small state file. The long-running
-// `clawd-pet watch` TUI polls that file each tick and drives the pet's mood.
+// `cc-petline watch` TUI polls that file each tick and drives the pet's mood.
 //
 // File format: a single line `<mood> <nanos>` (nanos makes every emit distinct so
 // repeated same-mood events still register as activity). The state file lives at
-// %USERPROFILE%\.clawd-pet\state  (or $HOME/.clawd-pet/state).
+// %USERPROFILE%\.cc-petline\state  (or $HOME/.cc-petline/state).
 
 use std::fs;
 use std::io::IsTerminal;
@@ -15,12 +15,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
 
-/// The `~/.clawd-pet` config dir shared by the state and theme files.
+/// The `~/.cc-petline` config dir shared by the state and theme files.
 fn config_dir() -> PathBuf {
     let home = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".clawd-pet")
+    PathBuf::from(home).join(".cc-petline")
 }
 
 /// The shared state file both `emit` and `watch` use.
@@ -28,9 +28,9 @@ pub fn state_file() -> PathBuf {
     config_dir().join("state")
 }
 
-/// The persisted-theme file written by `clawd-pet theme <name>` and read by
-/// `anim::active_theme()` as a fallback when `CLAWD_PET_THEME` is unset. This is
-/// what lets the `/clawd-theme` slash command stick across the separate processes
+/// The persisted-theme file written by `cc-petline theme <name>` and read by
+/// `anim::active_theme()` as a fallback when `CC_PETLINE_THEME` is unset. This is
+/// what lets the `/cc-petline-theme` slash command stick across the separate processes
 /// Claude Code spawns for the statusline (an env var set in one wouldn't reach the
 /// next). Holds a single line: the lowercased theme name.
 pub fn theme_file() -> PathBuf {
@@ -44,7 +44,7 @@ pub fn read_persisted_theme() -> Option<String> {
     if s.is_empty() { None } else { Some(s) }
 }
 
-/// Persist the theme name (called by `clawd-pet theme <name>`). Creates the dir if
+/// Persist the theme name (called by `cc-petline theme <name>`). Creates the dir if
 /// needed and stores the trimmed, lowercased name.
 pub fn write_persisted_theme(name: &str) -> Result<()> {
     let path = theme_file();
@@ -133,9 +133,9 @@ pub fn is_post_tool_use(raw: &str) -> bool {
     key == "posttooluse"
 }
 
-/// PreToolUse "token-saver" guard (`clawd-pet guard`).
+/// PreToolUse "token-saver" guard (`cc-petline guard`).
 ///
-/// Reads the PreToolUse hook JSON from stdin. When `CLAWD_PET_GUARD=1` is set it
+/// Reads the PreToolUse hook JSON from stdin. When `CC_PETLINE_GUARD=1` is set it
 /// blocks a small, conservative denylist of wasteful/dangerous shell commands by
 /// exiting 2 (Claude Code feeds the stderr message back so Claude self-corrects)
 /// — saving the round trip the bad call would otherwise burn. When unset (the
@@ -143,7 +143,7 @@ pub fn is_post_tool_use(raw: &str) -> bool {
 ///
 /// It only inspects `Bash`/shell-type tools; everything else passes untouched.
 pub fn run_guard() -> Result<()> {
-    if std::env::var("CLAWD_PET_GUARD").ok().as_deref() != Some("1") {
+    if std::env::var("CC_PETLINE_GUARD").ok().as_deref() != Some("1") {
         return Ok(()); // disabled → never block
     }
     if std::io::stdin().is_terminal() {
@@ -166,7 +166,7 @@ pub fn run_guard() -> Result<()> {
 
     if let Some(reason) = guard_reason(cmd) {
         // Exit 2: Claude Code shows stderr to Claude and blocks the tool call.
-        eprintln!("clawd-pet guard blocked this command: {reason}");
+        eprintln!("cc-petline guard blocked this command: {reason}");
         std::process::exit(2);
     }
     Ok(())

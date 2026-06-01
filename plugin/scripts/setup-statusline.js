@@ -1,8 +1,8 @@
-// setup-statusline.js — repoint Claude Code's statusLine at the clawd-pet wrapper,
+// setup-statusline.js — repoint Claude Code's statusLine at the cc-petline wrapper,
 // so the Charm statusline still renders (via ccstatusline) AND the pet gets live
 // context%/cost. Reversible: a backup is written and the original command saved.
 //
-// Usage:  node setup-statusline.js "<abs path to clawd-pet.exe>"
+// Usage:  node setup-statusline.js "<abs path to cc-petline.exe>"
 //         node setup-statusline.js --revert
 //
 // JSON-patch via node (not Edit/heredoc) — the proven-reliable method on this box.
@@ -12,14 +12,14 @@ const os = require("os");
 const path = require("path");
 
 const settingsPath = path.join(os.homedir(), ".claude", "settings.json");
-const markerPath = path.join(os.homedir(), ".clawd-pet", "statusline-prev.json");
+const markerPath = path.join(os.homedir(), ".cc-petline", "statusline-prev.json");
 
 function load() {
   const raw = fs.readFileSync(settingsPath, "utf8");
   return JSON.parse(raw);
 }
 function save(obj) {
-  fs.copyFileSync(settingsPath, settingsPath + ".bak-clawdpet");
+  fs.copyFileSync(settingsPath, settingsPath + ".bak-cc-petline");
   fs.writeFileSync(settingsPath, JSON.stringify(obj, null, 2));
 }
 
@@ -40,7 +40,7 @@ if (arg === "--revert") {
 
 const exe = arg;
 if (!exe) {
-  console.error('usage: node setup-statusline.js "<path to clawd-pet.exe>"');
+  console.error('usage: node setup-statusline.js "<path to cc-petline.exe>"');
   process.exit(1);
 }
 
@@ -61,7 +61,7 @@ s.statusLine = {
 };
 save(s);
 
-console.log("statusLine -> clawd-pet wrapper:");
+console.log("statusLine -> cc-petline wrapper:");
 console.log("  " + s.statusLine.command);
 console.log("  refreshInterval: 1s (max idle animation rate)");
-console.log("backup: settings.json.bak-clawdpet ; revert: node setup-statusline.js --revert");
+console.log("backup: settings.json.bak-cc-petline ; revert: node setup-statusline.js --revert");

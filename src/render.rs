@@ -1,4 +1,4 @@
-// Unicode block image renderer for clawd-pet (chafa-style), with TRANSPARENCY.
+// Unicode block image renderer for cc-petline (chafa-style), with TRANSPARENCY.
 //
 // Renders a sprite frame into terminal block glyphs. We render halfblocks
 // ourselves (instead of ratatui-image) specifically so transparent pixels become

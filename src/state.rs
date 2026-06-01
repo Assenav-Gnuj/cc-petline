@@ -1,4 +1,4 @@
-// Pet state machine for clawd-pet.
+// Pet state machine for cc-petline.
 //
 // 11 moods — one per mascot animation. Each maps to a frame dir the engine loads
 // from assets/frames/<state>/ (the shipped Fox pack), with a synthetic fallback.

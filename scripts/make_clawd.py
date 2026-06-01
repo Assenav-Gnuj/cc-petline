@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate a 'Clawd' (Claude) mascot sprite pack for clawd-pet.
+"""Generate a 'Clawd' (Claude) mascot sprite pack for cc-petline.
 
 IMPORTANT: this is tuned for a TINY render. The half-block statusline collapses
 the sprite to ~10x10 px (a 5-row statusline) — so the art is authored on a 10-cell

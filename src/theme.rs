@@ -2,7 +2,7 @@
 // on-disk frame PNGs). On-disk art always wins — see anim::frame_at /
 // anim::build_library, which only call this when their frame dir is empty.
 //
-// A theme is chosen via CLAWD_PET_THEME:
+// A theme is chosen via CC_PETLINE_THEME:
 //   ghost            → the spectral ghost in ghost.rs
 //   anything else    → the synthetic blob in sprite.rs (fox/default included — but
 //                      only reached when their on-disk frames are missing)
