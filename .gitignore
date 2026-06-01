@@ -4,6 +4,8 @@
 /assets/frames/*/*.png
 # Custom theme sprite packs (sliced art) — keep structure, ignore the media.
 /assets/themes/*/frames/*/*.png
+# Raw source art staged locally — never committed.
+/assets/source/
 
 # Plugin's copied binary (rebuild via plugin/build.ps1)
 /plugin/bin/*.exe
